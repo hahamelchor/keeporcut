@@ -579,7 +579,7 @@ function ChallengeLinkScreen({ config, players, p1Result, onHome }) {
   const p1Code = useMemo(() => encodeResult(p1Result.kept, p1Result.cut, players), [p1Result, players]);
   const challengeURL = buildChallengeURL(gameCode, p1Code);
 
-  const smsBody = `🏈 NFL Keep or Cut — I drafted my squad, now it's your turn!\n\nSame pool of players, keep ${config.keepCount} of ${config.totalPlayers}. Let's see who can make the better squad!\n\n${challengeURL}`;
+  const smsBody = `🏈 NFL Keep or Cut — I drafted my squad, now it's your turn!\n\nSame pool of ${config.totalPlayers} randomized players, keep ${config.keepCount} of them without knowing else might come up. Let's see who can make the better squad!\n\n${challengeURL}`;
 
   const poolLabel = ALL_POOL_OPTIONS.find(o => o.id === config.poolId)?.label || config.poolId;
 
