@@ -579,7 +579,7 @@ function ChallengeLinkScreen({ config, players, p1Result, onHome }) {
   const p1Code = useMemo(() => encodeResult(p1Result.kept, p1Result.cut, players), [p1Result, players]);
   const challengeURL = buildChallengeURL(gameCode, p1Code);
 
-  const smsBody = `🏈 NFL Keep or Cut — I drafted my squad, now it's your turn!\n\nSame pool of ${config.totalPlayers} randomized players, keep ${config.keepCount} of them without knowing else might come up. Let's see who can make the better squad!\n\n${challengeURL}`;
+  const smsBody = `🏈 I just locked in my squad. Think you can top it? Same ${config.totalPlayers} players, keep ${config.keepCount}. Let's find out who actually knows ball. 👇\n\n${challengeURL}`;
 
   const poolLabel = ALL_POOL_OPTIONS.find(o => o.id === config.poolId)?.label || config.poolId;
 
@@ -704,7 +704,7 @@ function ResultsScreen({ results, config, onPlayAgain, onHome, isChallenge = fal
 
       <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
         <button onClick={onPlayAgain} style={{ flex: 1, background: "linear-gradient(135deg, #c53030, #e53e3e)", color: "#fff", border: "none", borderRadius: "10px", padding: "14px", fontWeight: 800, fontSize: "15px", cursor: "pointer" }}>🔄 Play Again</button>
-        <button onClick={onHome} style={{ background: "#1a1a2e", border: "1px solid #2d2d4a", color: "#888", borderRadius: "10px", padding: "14px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}>🏠 Home</button>
+        <button onClick={onHome} style={{ background: "#1a1a2e", border: "1px solid #2d2d4a", color: "#888", borderRadius: "10px", padding: "14px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}>🔀 Switch Player Pool</button>
       </div>
     </div>
   );
@@ -892,7 +892,7 @@ const handleChallengeAccepted = () => {
         <ResultsScreen
           results={[p1Result]}
           config={config}
-          onPlayAgain={() => handleStart(config)}
+          onPlayAgain={() => handleStart({ ...config, seed: null })}
           onHome={goHome}
           isChallenge={false}
         />
@@ -902,7 +902,7 @@ const handleChallengeAccepted = () => {
         <ResultsScreen
           results={[p1Result, config._p2Result]}
           config={config}
-          onPlayAgain={() => handleStart({ ...config, _p2Result: undefined })}
+          onPlayAgain={() => handleStart({ ...config, _p2Result: undefined, seed: null })}
           onHome={goHome}
           isChallenge={true}
         />
