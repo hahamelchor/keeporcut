@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
 
@@ -83,327 +83,47 @@ function clearURLParams() {
   window.history.replaceState({}, "", "/");
 }
 
-// ── NFL Player Database ───────────────────────────────────────────────────────
-const NFL_PLAYERS = {
+// ── NFL Player Database — loaded from Google Sheet ───────────────────────────
+const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbwsTwAaFAWHSlli50kTNAiPN6u-CcQ_VTwIFBg2NoTWtcwd5wgSF1XzuFFFkvvekY9u/exec";
+
+// Convert flat sheet rows into pool-keyed object
+function buildPlayerPools(rows) {
+  const pools = {};
+  rows.forEach(row => {
+    if (!row.name || !row.pool) return;
+    const poolIds = String(row.pool).split(",").map(p => p.trim()).filter(Boolean);
+    const player = {
+      name: String(row.name),
+      pos: String(row.pos || ""),
+      era: String(row.era || "active"),
+      teams: String(row.teams || "").split(",").map(t => t.trim()).filter(Boolean),
+      hof: String(row.hof).toUpperCase() === "TRUE",
+      fanFave: String(row.fanFave).toUpperCase() === "TRUE",
+    };
+    if (row.age && String(row.age).trim() !== "") player.age = parseInt(row.age);
+    if (row.peak && String(row.peak).trim() !== "") player.peak = String(row.peak);
+    poolIds.forEach(pid => {
+      if (!pools[pid]) pools[pid] = [];
+      // avoid duplicates
+      if (!pools[pid].find(p => p.name === player.name)) {
+        pools[pid].push(player);
+      }
+    });
+  });
+  return pools;
+}
+
+// Fallback minimal pool in case sheet fails
+const NFL_PLAYERS_FALLBACK = {
   all_time_greats: [
     { name: "Jerry Rice", pos: "WR", era: "retired", teams: ["SF"], hof: true, peak: "1986–2002" },
     { name: "Tom Brady", pos: "QB", era: "retired", teams: ["NE","TB"], hof: true, peak: "2001–2022" },
-    { name: "Lawrence Taylor", pos: "LB", era: "retired", teams: ["NYG"], hof: true, peak: "1981–1993" },
     { name: "Barry Sanders", pos: "RB", era: "retired", teams: ["DET"], hof: true, peak: "1989–1998" },
-    { name: "Peyton Manning", pos: "QB", era: "retired", teams: ["IND","DEN"], hof: true, peak: "1998–2015" },
-    { name: "Reggie White", pos: "DE", era: "retired", teams: ["PHI","GB"], hof: true, peak: "1985–2000" },
-    { name: "Randy Moss", pos: "WR", era: "retired", teams: ["MIN","NE"], hof: true, peak: "1998–2012" },
-    { name: "Deion Sanders", pos: "CB", era: "retired", teams: ["ATL","SF","DAL"], hof: true, peak: "1989–2005" },
+    { name: "Patrick Mahomes", pos: "QB", era: "active", teams: ["KC"], age: 29, hof: false },
+    { name: "Lamar Jackson", pos: "QB", era: "active", teams: ["BAL"], age: 27, hof: false },
+    { name: "Lawrence Taylor", pos: "LB", era: "retired", teams: ["NYG"], hof: true, peak: "1981–1993" },
     { name: "Walter Payton", pos: "RB", era: "retired", teams: ["CHI"], hof: true, peak: "1975–1987" },
-    { name: "Emmitt Smith", pos: "RB", era: "retired", teams: ["DAL"], hof: true, peak: "1990–2004" },
-    { name: "Jim Brown", pos: "RB", era: "retired", teams: ["CLE"], hof: true, peak: "1957–1965" },
-    { name: "Joe Montana", pos: "QB", era: "retired", teams: ["SF"], hof: true, peak: "1979–1994" },
-    { name: "Dan Marino", pos: "QB", era: "retired", teams: ["MIA"], hof: true, peak: "1983–1999" },
-    { name: "John Elway", pos: "QB", era: "retired", teams: ["DEN"], hof: true, peak: "1983–1998" },
-    { name: "Rod Woodson", pos: "CB", era: "retired", teams: ["PIT","BAL"], hof: true, peak: "1987–2003" },
-    { name: "Bruce Smith", pos: "DE", era: "retired", teams: ["BUF"], hof: true, peak: "1985–2003" },
-    { name: "Dick Butkus", pos: "LB", era: "retired", teams: ["CHI"], hof: true, peak: "1965–1973" },
-    { name: "Anthony Munoz", pos: "OT", era: "retired", teams: ["CIN"], hof: true, peak: "1980–1992" },
-    { name: "Ronnie Lott", pos: "S", era: "retired", teams: ["SF"], hof: true, peak: "1981–1994" },
-    { name: "Patrick Mahomes", pos: "QB", era: "active", teams: ["KC"], age: 29, hof: false },
-    { name: "Lamar Jackson", pos: "QB", era: "active", teams: ["BAL"], age: 27, hof: false },
-    { name: "Justin Jefferson", pos: "WR", era: "active", teams: ["MIN"], age: 26, hof: false },
-    { name: "Travis Kelce", pos: "TE", era: "active", teams: ["KC"], age: 35, hof: false },
-    { name: "Micah Parsons", pos: "LB", era: "active", teams: ["DAL"], age: 26, hof: false },
-  ],
-  current_stars: [
-    { name: "Patrick Mahomes", pos: "QB", era: "active", teams: ["KC"], age: 29, hof: false },
-    { name: "Lamar Jackson", pos: "QB", era: "active", teams: ["BAL"], age: 27, hof: false },
-    { name: "Josh Allen", pos: "QB", era: "active", teams: ["BUF"], age: 29, hof: false },
-    { name: "Justin Jefferson", pos: "WR", era: "active", teams: ["MIN"], age: 26, hof: false },
-    { name: "Tyreek Hill", pos: "WR", era: "active", teams: ["MIA"], age: 32, hof: false },
-    { name: "Travis Kelce", pos: "TE", era: "active", teams: ["KC"], age: 35, hof: false },
-    { name: "Christian McCaffrey", pos: "RB", era: "active", teams: ["SF"], age: 28, hof: false },
-    { name: "Derrick Henry", pos: "RB", era: "active", teams: ["BAL"], age: 31, hof: false },
-    { name: "Micah Parsons", pos: "LB", era: "active", teams: ["DAL"], age: 26, hof: false },
-    { name: "Myles Garrett", pos: "DE", era: "active", teams: ["CLE"], age: 29, hof: false },
-    { name: "CeeDee Lamb", pos: "WR", era: "active", teams: ["DAL"], age: 26, hof: false },
-    { name: "Ja'Marr Chase", pos: "WR", era: "active", teams: ["CIN"], age: 25, hof: false },
-    { name: "Jalen Hurts", pos: "QB", era: "active", teams: ["PHI"], age: 27, hof: false },
-    { name: "Brock Purdy", pos: "QB", era: "active", teams: ["SF"], age: 25, hof: false },
-    { name: "Amon-Ra St. Brown", pos: "WR", era: "active", teams: ["DET"], age: 25, hof: false },
-    { name: "Sam LaPorta", pos: "TE", era: "active", teams: ["DET"], age: 24, hof: false },
-    { name: "Davante Adams", pos: "WR", era: "active", teams: ["LV"], age: 32, hof: false },
-    { name: "DeVonta Smith", pos: "WR", era: "active", teams: ["PHI"], age: 28, hof: false },
-    { name: "Dak Prescott", pos: "QB", era: "active", teams: ["DAL"], age: 32, hof: false },
-    { name: "Tua Tagovailoa", pos: "QB", era: "active", teams: ["MIA"], age: 27, hof: false },
-  ],
-  hof_only: [
     { name: "Jerry Rice", pos: "WR", era: "retired", teams: ["SF"], hof: true, peak: "1986–2002" },
-    { name: "Tom Brady", pos: "QB", era: "retired", teams: ["NE","TB"], hof: true, peak: "2001–2022" },
-    { name: "Lawrence Taylor", pos: "LB", era: "retired", teams: ["NYG"], hof: true, peak: "1981–1993" },
-    { name: "Barry Sanders", pos: "RB", era: "retired", teams: ["DET"], hof: true, peak: "1989–1998" },
-    { name: "Peyton Manning", pos: "QB", era: "retired", teams: ["IND","DEN"], hof: true, peak: "1998–2015" },
-    { name: "Reggie White", pos: "DE", era: "retired", teams: ["PHI","GB"], hof: true, peak: "1985–2000" },
-    { name: "Randy Moss", pos: "WR", era: "retired", teams: ["MIN","NE"], hof: true, peak: "1998–2012" },
-    { name: "Deion Sanders", pos: "CB", era: "retired", teams: ["ATL","SF","DAL"], hof: true, peak: "1989–2005" },
-    { name: "Walter Payton", pos: "RB", era: "retired", teams: ["CHI"], hof: true, peak: "1975–1987" },
-    { name: "Emmitt Smith", pos: "RB", era: "retired", teams: ["DAL"], hof: true, peak: "1990–2004" },
-    { name: "Joe Montana", pos: "QB", era: "retired", teams: ["SF"], hof: true, peak: "1979–1994" },
-    { name: "Dan Marino", pos: "QB", era: "retired", teams: ["MIA"], hof: true, peak: "1983–1999" },
-    { name: "Jim Brown", pos: "RB", era: "retired", teams: ["CLE"], hof: true, peak: "1957–1965" },
-    { name: "John Elway", pos: "QB", era: "retired", teams: ["DEN"], hof: true, peak: "1983–1998" },
-    { name: "Dick Butkus", pos: "LB", era: "retired", teams: ["CHI"], hof: true, peak: "1965–1973" },
-    { name: "LaDainian Tomlinson", pos: "RB", era: "retired", teams: ["SD"], hof: true, peak: "2001–2011" },
-    { name: "Adrian Peterson", pos: "RB", era: "retired", teams: ["MIN"], hof: true, peak: "2007–2018" },
-    { name: "Terrell Owens", pos: "WR", era: "retired", teams: ["SF","PHI","DAL"], hof: true, peak: "1996–2010" },
-    { name: "Brett Favre", pos: "QB", era: "retired", teams: ["GB"], hof: true, peak: "1992–2007" },
-    { name: "Bruce Smith", pos: "DE", era: "retired", teams: ["BUF"], hof: true, peak: "1985–2003" },
-  ],
-  qbs_only: [
-    { name: "Tom Brady", pos: "QB", era: "retired", teams: ["NE","TB"], hof: true, peak: "2001–2022" },
-    { name: "Peyton Manning", pos: "QB", era: "retired", teams: ["IND","DEN"], hof: true, peak: "1998–2015" },
-    { name: "Joe Montana", pos: "QB", era: "retired", teams: ["SF"], hof: true, peak: "1979–1994" },
-    { name: "Dan Marino", pos: "QB", era: "retired", teams: ["MIA"], hof: true, peak: "1983–1999" },
-    { name: "John Elway", pos: "QB", era: "retired", teams: ["DEN"], hof: true, peak: "1983–1998" },
-    { name: "Brett Favre", pos: "QB", era: "retired", teams: ["GB"], hof: true, peak: "1992–2007" },
-    { name: "Patrick Mahomes", pos: "QB", era: "active", teams: ["KC"], age: 29, hof: false },
-    { name: "Lamar Jackson", pos: "QB", era: "active", teams: ["BAL"], age: 27, hof: false },
-    { name: "Josh Allen", pos: "QB", era: "active", teams: ["BUF"], age: 29, hof: false },
-    { name: "Aaron Rodgers", pos: "QB", era: "active", teams: ["GB","NYJ"], age: 42, hof: false },
-    { name: "Jalen Hurts", pos: "QB", era: "active", teams: ["PHI"], age: 27, hof: false },
-    { name: "Drew Brees", pos: "QB", era: "retired", teams: ["NO","SD"], hof: true, peak: "2001–2020" },
-    { name: "Steve Young", pos: "QB", era: "retired", teams: ["SF"], hof: true, peak: "1984–1999" },
-    { name: "Brock Purdy", pos: "QB", era: "active", teams: ["SF"], age: 25, hof: false },
-    { name: "Dak Prescott", pos: "QB", era: "active", teams: ["DAL"], age: 32, hof: false },
-  ],
-  rbs_only: [
-    { name: "Barry Sanders", pos: "RB", era: "retired", teams: ["DET"], hof: true, peak: "1989–1998" },
-    { name: "Walter Payton", pos: "RB", era: "retired", teams: ["CHI"], hof: true, peak: "1975–1987" },
-    { name: "Emmitt Smith", pos: "RB", era: "retired", teams: ["DAL"], hof: true, peak: "1990–2004" },
-    { name: "Jim Brown", pos: "RB", era: "retired", teams: ["CLE"], hof: true, peak: "1957–1965" },
-    { name: "Eric Dickerson", pos: "RB", era: "retired", teams: ["LA","IND"], hof: true, peak: "1983–1993" },
-    { name: "Earl Campbell", pos: "RB", era: "retired", teams: ["HOU"], hof: true, peak: "1978–1985" },
-    { name: "Christian McCaffrey", pos: "RB", era: "active", teams: ["SF"], age: 28, hof: false },
-    { name: "Derrick Henry", pos: "RB", era: "active", teams: ["BAL"], age: 31, hof: false },
-    { name: "Adrian Peterson", pos: "RB", era: "retired", teams: ["MIN"], hof: true, peak: "2007–2018" },
-    { name: "LaDainian Tomlinson", pos: "RB", era: "retired", teams: ["SD"], hof: true, peak: "2001–2011" },
-    { name: "Marshall Faulk", pos: "RB", era: "retired", teams: ["IND","STL"], hof: true, peak: "1994–2005" },
-    { name: "Gale Sayers", pos: "RB", era: "retired", teams: ["CHI"], hof: true, peak: "1965–1971" },
-  ],
-  wrs_only: [
-    { name: "Jerry Rice", pos: "WR", era: "retired", teams: ["SF"], hof: true, peak: "1986–2002" },
-    { name: "Randy Moss", pos: "WR", era: "retired", teams: ["MIN","NE"], hof: true, peak: "1998–2012" },
-    { name: "Terrell Owens", pos: "WR", era: "retired", teams: ["SF","PHI","DAL"], hof: true, peak: "1996–2010" },
-    { name: "Calvin Johnson", pos: "WR", era: "retired", teams: ["DET"], hof: true, peak: "2007–2015" },
-    { name: "Justin Jefferson", pos: "WR", era: "active", teams: ["MIN"], age: 26, hof: false },
-    { name: "Tyreek Hill", pos: "WR", era: "active", teams: ["MIA"], age: 32, hof: false },
-    { name: "Davante Adams", pos: "WR", era: "active", teams: ["LV"], age: 32, hof: false },
-    { name: "CeeDee Lamb", pos: "WR", era: "active", teams: ["DAL"], age: 26, hof: false },
-    { name: "Ja'Marr Chase", pos: "WR", era: "active", teams: ["CIN"], age: 25, hof: false },
-    { name: "Cris Carter", pos: "WR", era: "retired", teams: ["MIN"], hof: true, peak: "1987–2002" },
-    { name: "Michael Irvin", pos: "WR", era: "retired", teams: ["DAL"], hof: true, peak: "1988–1999" },
-    { name: "Steve Largent", pos: "WR", era: "retired", teams: ["SEA"], hof: true, peak: "1976–1989" },
-  ],
-  current_over_30: [
-    { name: "Travis Kelce", pos: "TE", era: "active", teams: ["KC"], age: 35, hof: false },
-    { name: "Tyreek Hill", pos: "WR", era: "active", teams: ["MIA"], age: 32, hof: false },
-    { name: "Davante Adams", pos: "WR", era: "active", teams: ["LV"], age: 32, hof: false },
-    { name: "Derrick Henry", pos: "RB", era: "active", teams: ["BAL"], age: 31, hof: false },
-    { name: "Dak Prescott", pos: "QB", era: "active", teams: ["DAL"], age: 32, hof: false },
-    { name: "Aaron Rodgers", pos: "QB", era: "active", teams: ["NYJ"], age: 42, hof: false },
-    { name: "DeAndre Hopkins", pos: "WR", era: "active", teams: ["TEN"], age: 33, hof: false },
-    { name: "Adam Thielen", pos: "WR", era: "active", teams: ["CAR"], age: 35, hof: false },
-    { name: "Zack Martin", pos: "OG", era: "active", teams: ["DAL"], age: 34, hof: false },
-    { name: "Matt Ryan", pos: "QB", era: "retired", teams: ["ATL"], age: 39, hof: false },
-    { name: "Julio Jones", pos: "WR", era: "retired", teams: ["ATL"], age: 36, hof: false },
-    { name: "Jason Kelce", pos: "C", era: "retired", teams: ["PHI"], age: 37, hof: false },
-  ],
-  fan_favorites: [
-    { name: "Nick Foles", pos: "QB", era: "retired", teams: ["PHI","STL","JAX","CHI"], hof: false, peak: "2017–2019", fanFave: true },
-    { name: "Tim Tebow", pos: "QB", era: "retired", teams: ["DEN","NYJ"], hof: false, peak: "2010–2012", fanFave: true },
-    { name: "Marshawn Lynch", pos: "RB", era: "retired", teams: ["SEA","BUF","OAK"], hof: false, peak: "2011–2015", fanFave: true },
-    { name: "Antonio Brown", pos: "WR", era: "retired", teams: ["PIT","OAK","NE","TB"], hof: false, peak: "2013–2019", fanFave: true },
-    { name: "Odell Beckham Jr.", pos: "WR", era: "active", teams: ["NYG","CLE","LAR","BAL"], age: 32, hof: false, fanFave: true },
-    { name: "Rob Gronkowski", pos: "TE", era: "retired", teams: ["NE","TB"], hof: false, peak: "2010–2021", fanFave: true },
-    { name: "Aaron Rodgers", pos: "QB", era: "active", teams: ["GB","NYJ"], age: 42, hof: false, fanFave: true },
-    { name: "Bo Jackson", pos: "RB", era: "retired", teams: ["LA Rams"], hof: false, peak: "1987–1990", fanFave: true },
-    { name: "Michael Vick", pos: "QB", era: "retired", teams: ["ATL","PHI"], hof: false, peak: "2002–2010", fanFave: true },
-    { name: "Baker Mayfield", pos: "QB", era: "active", teams: ["TB","CLE","CAR","LAR"], age: 30, hof: false, fanFave: true },
-    { name: "Cam Newton", pos: "QB", era: "retired", teams: ["CAR","NE"], hof: false, peak: "2011–2019", fanFave: true },
-    { name: "JJ Watt", pos: "DE", era: "retired", teams: ["HOU","ARI"], hof: false, peak: "2011–2022", fanFave: true },
-    { name: "Ray Lewis", pos: "LB", era: "retired", teams: ["BAL"], hof: true, peak: "1996–2012", fanFave: true },
-    { name: "Terrell Davis", pos: "RB", era: "retired", teams: ["DEN"], hof: true, peak: "1995–2001", fanFave: true },
-    { name: "Steve McNair", pos: "QB", era: "retired", teams: ["TEN","BAL"], hof: false, peak: "1995–2007", fanFave: true },
-    { name: "Chad Johnson", pos: "WR", era: "retired", teams: ["CIN","NE"], hof: false, peak: "2003–2011", fanFave: true },
-    { name: "Brandon Marshall", pos: "WR", era: "retired", teams: ["DEN","MIA","CHI","NYJ","NYG"], hof: false, peak: "2008–2016", fanFave: true },
-    { name: "Eli Manning", pos: "QB", era: "retired", teams: ["NYG"], hof: false, peak: "2004–2019", fanFave: true },
-    { name: "Frank Gore", pos: "RB", era: "retired", teams: ["SF","IND","MIA"], hof: false, peak: "2006–2019", fanFave: true },
-    { name: "DeSean Jackson", pos: "WR", era: "retired", teams: ["PHI","WAS","TB"], hof: false, peak: "2008–2021", fanFave: true },
-  ],
-  // ── Franchise All-Time Greats ──
-  franchise_cowboys: [
-    { name: "Emmitt Smith", pos: "RB", era: "retired", teams: ["DAL"], hof: true, peak: "1990–2002" },
-    { name: "Troy Aikman", pos: "QB", era: "retired", teams: ["DAL"], hof: true, peak: "1989–2000" },
-    { name: "Michael Irvin", pos: "WR", era: "retired", teams: ["DAL"], hof: true, peak: "1988–1999" },
-    { name: "Deion Sanders", pos: "CB", era: "retired", teams: ["DAL"], hof: true, peak: "1995–1999" },
-    { name: "Roger Staubach", pos: "QB", era: "retired", teams: ["DAL"], hof: true, peak: "1969–1979" },
-    { name: "Bob Lilly", pos: "DT", era: "retired", teams: ["DAL"], hof: true, peak: "1961–1974" },
-    { name: "Tony Dorsett", pos: "RB", era: "retired", teams: ["DAL"], hof: true, peak: "1977–1987" },
-    { name: "Dak Prescott", pos: "QB", era: "active", teams: ["DAL"], age: 32, hof: false },
-    { name: "CeeDee Lamb", pos: "WR", era: "active", teams: ["DAL"], age: 26, hof: false },
-    { name: "Micah Parsons", pos: "LB", era: "active", teams: ["DAL"], age: 26, hof: false },
-    { name: "Zack Martin", pos: "OG", era: "active", teams: ["DAL"], age: 34, hof: false },
-    { name: "DeMarcus Ware", pos: "LB", era: "retired", teams: ["DAL","DEN"], hof: true, peak: "2005–2016" },
-  ],
-  franchise_patriots: [
-    { name: "Tom Brady", pos: "QB", era: "retired", teams: ["NE"], hof: true, peak: "2001–2019" },
-    { name: "Rob Gronkowski", pos: "TE", era: "retired", teams: ["NE"], hof: false, peak: "2010–2018" },
-    { name: "Randy Moss", pos: "WR", era: "retired", teams: ["NE"], hof: true, peak: "2007–2010" },
-    { name: "Ty Law", pos: "CB", era: "retired", teams: ["NE"], hof: true, peak: "1995–2004" },
-    { name: "Mike Vrabel", pos: "LB", era: "retired", teams: ["NE"], hof: false, peak: "2001–2008" },
-    { name: "Wes Welker", pos: "WR", era: "retired", teams: ["NE"], hof: false, peak: "2007–2012", fanFave: true },
-    { name: "Adam Vinatieri", pos: "K", era: "retired", teams: ["NE","IND"], hof: true, peak: "1996–2019" },
-    { name: "Richard Seymour", pos: "DT", era: "retired", teams: ["NE"], hof: true, peak: "2001–2008" },
-    { name: "Julian Edelman", pos: "WR", era: "retired", teams: ["NE"], hof: false, peak: "2009–2021", fanFave: true },
-    { name: "Corey Dillon", pos: "RB", era: "retired", teams: ["NE"], hof: false, peak: "2004–2006", fanFave: true },
-    { name: "Logan Mankins", pos: "OG", era: "retired", teams: ["NE"], hof: true, peak: "2005–2013" },
-    { name: "Nick Folk", pos: "K", era: "active", teams: ["NE"], age: 39, hof: false, fanFave: true },
-  ],
-  franchise_49ers: [
-    { name: "Jerry Rice", pos: "WR", era: "retired", teams: ["SF"], hof: true, peak: "1986–2000" },
-    { name: "Joe Montana", pos: "QB", era: "retired", teams: ["SF"], hof: true, peak: "1979–1992" },
-    { name: "Steve Young", pos: "QB", era: "retired", teams: ["SF"], hof: true, peak: "1987–1999" },
-    { name: "Ronnie Lott", pos: "S", era: "retired", teams: ["SF"], hof: true, peak: "1981–1990" },
-    { name: "Roger Craig", pos: "RB", era: "retired", teams: ["SF"], hof: true, peak: "1983–1990" },
-    { name: "Patrick Willis", pos: "LB", era: "retired", teams: ["SF"], hof: true, peak: "2007–2014" },
-    { name: "Bryant Young", pos: "DT", era: "retired", teams: ["SF"], hof: true, peak: "1994–2007" },
-    { name: "Christian McCaffrey", pos: "RB", era: "active", teams: ["SF"], age: 28, hof: false },
-    { name: "Brock Purdy", pos: "QB", era: "active", teams: ["SF"], age: 25, hof: false, fanFave: true },
-    { name: "Deebo Samuel", pos: "WR", era: "active", teams: ["SF"], age: 29, hof: false },
-    { name: "Fred Warner", pos: "LB", era: "active", teams: ["SF"], age: 28, hof: false },
-    { name: "Nick Bosa", pos: "DE", era: "active", teams: ["SF"], age: 27, hof: false },
-  ],
-  franchise_steelers: [
-    { name: "Terry Bradshaw", pos: "QB", era: "retired", teams: ["PIT"], hof: true, peak: "1970–1983" },
-    { name: "Franco Harris", pos: "RB", era: "retired", teams: ["PIT"], hof: true, peak: "1972–1984" },
-    { name: "Lynn Swann", pos: "WR", era: "retired", teams: ["PIT"], hof: true, peak: "1974–1982" },
-    { name: "Mean Joe Greene", pos: "DT", era: "retired", teams: ["PIT"], hof: true, peak: "1969–1981" },
-    { name: "Rod Woodson", pos: "CB", era: "retired", teams: ["PIT"], hof: true, peak: "1987–1996" },
-    { name: "Jerome Bettis", pos: "RB", era: "retired", teams: ["PIT"], hof: true, peak: "1996–2005", fanFave: true },
-    { name: "Hines Ward", pos: "WR", era: "retired", teams: ["PIT"], hof: true, peak: "1998–2011", fanFave: true },
-    { name: "Ben Roethlisberger", pos: "QB", era: "retired", teams: ["PIT"], hof: false, peak: "2004–2021" },
-    { name: "Antonio Brown", pos: "WR", era: "retired", teams: ["PIT"], hof: false, peak: "2013–2018", fanFave: true },
-    { name: "Le'Veon Bell", pos: "RB", era: "retired", teams: ["PIT"], hof: false, peak: "2013–2018", fanFave: true },
-    { name: "Troy Polamalu", pos: "S", era: "retired", teams: ["PIT"], hof: true, peak: "2003–2014" },
-    { name: "TJ Watt", pos: "LB", era: "active", teams: ["PIT"], age: 30, hof: false },
-  ],
-  franchise_packers: [
-    { name: "Bart Starr", pos: "QB", era: "retired", teams: ["GB"], hof: true, peak: "1956–1971" },
-    { name: "Brett Favre", pos: "QB", era: "retired", teams: ["GB"], hof: true, peak: "1992–2007" },
-    { name: "Aaron Rodgers", pos: "QB", era: "active", teams: ["GB"], age: 42, hof: false },
-    { name: "Reggie White", pos: "DE", era: "retired", teams: ["GB"], hof: true, peak: "1993–1998" },
-    { name: "Ray Nitschke", pos: "LB", era: "retired", teams: ["GB"], hof: true, peak: "1958–1972" },
-    { name: "Don Hutson", pos: "WR", era: "retired", teams: ["GB"], hof: true, peak: "1935–1945" },
-    { name: "Jordy Nelson", pos: "WR", era: "retired", teams: ["GB"], hof: false, peak: "2008–2017", fanFave: true },
-    { name: "Davante Adams", pos: "WR", era: "active", teams: ["GB"], age: 32, hof: false },
-    { name: "Antonio Freeman", pos: "WR", era: "retired", teams: ["GB"], hof: false, peak: "1995–2002", fanFave: true },
-    { name: "AJ Hawk", pos: "LB", era: "retired", teams: ["GB"], hof: false, peak: "2006–2015", fanFave: true },
-    { name: "Jordan Love", pos: "QB", era: "active", teams: ["GB"], age: 26, hof: false },
-    { name: "Donald Driver", pos: "WR", era: "retired", teams: ["GB"], hof: false, peak: "1999–2012", fanFave: true },
-  ],
-  franchise_chiefs: [
-    { name: "Patrick Mahomes", pos: "QB", era: "active", teams: ["KC"], age: 29, hof: false },
-    { name: "Travis Kelce", pos: "TE", era: "active", teams: ["KC"], age: 35, hof: false },
-    { name: "Tyreek Hill", pos: "WR", era: "retired", teams: ["KC"], hof: false, peak: "2016–2021", fanFave: true },
-    { name: "Len Dawson", pos: "QB", era: "retired", teams: ["KC"], hof: true, peak: "1962–1975" },
-    { name: "Derrick Thomas", pos: "LB", era: "retired", teams: ["KC"], hof: true, peak: "1989–1999" },
-    { name: "Willie Lanier", pos: "LB", era: "retired", teams: ["KC"], hof: true, peak: "1967–1977" },
-    { name: "Tony Gonzalez", pos: "TE", era: "retired", teams: ["KC"], hof: true, peak: "1997–2013" },
-    { name: "Christian Okoye", pos: "RB", era: "retired", teams: ["KC"], hof: false, peak: "1987–1992", fanFave: true },
-    { name: "Priest Holmes", pos: "RB", era: "retired", teams: ["KC"], hof: false, peak: "2001–2007", fanFave: true },
-    { name: "Marcus Allen", pos: "RB", era: "retired", teams: ["KC"], hof: true, peak: "1993–1997" },
-    { name: "Jamaal Charles", pos: "RB", era: "retired", teams: ["KC"], hof: false, peak: "2008–2016", fanFave: true },
-    { name: "Chris Jones", pos: "DT", era: "active", teams: ["KC"], age: 30, hof: false },
-  ],
-  franchise_eagles: [
-    { name: "Reggie White", pos: "DE", era: "retired", teams: ["PHI"], hof: true, peak: "1985–1992" },
-    { name: "Donovan McNabb", pos: "QB", era: "retired", teams: ["PHI"], hof: false, peak: "1999–2009", fanFave: true },
-    { name: "Brian Dawkins", pos: "S", era: "retired", teams: ["PHI"], hof: true, peak: "1996–2008", fanFave: true },
-    { name: "Nick Foles", pos: "QB", era: "retired", teams: ["PHI"], hof: false, peak: "2017–2018", fanFave: true },
-    { name: "Jalen Hurts", pos: "QB", era: "active", teams: ["PHI"], age: 27, hof: false },
-    { name: "Jason Kelce", pos: "C", era: "retired", teams: ["PHI"], hof: false, peak: "2011–2023", fanFave: true },
-    { name: "DeVonta Smith", pos: "WR", era: "active", teams: ["PHI"], age: 28, hof: false },
-    { name: "AJ Brown", pos: "WR", era: "active", teams: ["PHI"], age: 28, hof: false },
-    { name: "Harold Carmichael", pos: "WR", era: "retired", teams: ["PHI"], hof: true, peak: "1971–1983" },
-    { name: "Chuck Bednarik", pos: "LB", era: "retired", teams: ["PHI"], hof: true, peak: "1949–1962" },
-    { name: "Wilbert Montgomery", pos: "RB", era: "retired", teams: ["PHI"], hof: false, peak: "1977–1984", fanFave: true },
-    { name: "DeSean Jackson", pos: "WR", era: "retired", teams: ["PHI"], hof: false, peak: "2008–2019", fanFave: true },
-  ],
-  franchise_ravens: [
-    { name: "Ray Lewis", pos: "LB", era: "retired", teams: ["BAL"], hof: true, peak: "1996–2012" },
-    { name: "Ed Reed", pos: "S", era: "retired", teams: ["BAL"], hof: true, peak: "2002–2013" },
-    { name: "Jonathan Ogden", pos: "OT", era: "retired", teams: ["BAL"], hof: true, peak: "1996–2007" },
-    { name: "Lamar Jackson", pos: "QB", era: "active", teams: ["BAL"], age: 27, hof: false },
-    { name: "Derrick Henry", pos: "RB", era: "active", teams: ["BAL"], age: 31, hof: false },
-    { name: "Terrell Suggs", pos: "LB", era: "retired", teams: ["BAL"], hof: false, peak: "2003–2019", fanFave: true },
-    { name: "Todd Heap", pos: "TE", era: "retired", teams: ["BAL"], hof: false, peak: "2001–2010", fanFave: true },
-    { name: "Jamal Lewis", pos: "RB", era: "retired", teams: ["BAL"], hof: false, peak: "2000–2006", fanFave: true },
-    { name: "Mark Andrews", pos: "TE", era: "active", teams: ["BAL"], age: 29, hof: false },
-    { name: "Haloti Ngata", pos: "DT", era: "retired", teams: ["BAL"], hof: true, peak: "2006–2014" },
-    { name: "Joe Flacco", pos: "QB", era: "retired", teams: ["BAL"], hof: false, peak: "2008–2018", fanFave: true },
-    { name: "Shannon Sharpe", pos: "TE", era: "retired", teams: ["BAL","DEN"], hof: true, peak: "1990–2003" },
-  ],
-  franchise_seahawks: [
-    { name: "Marshawn Lynch", pos: "RB", era: "retired", teams: ["SEA"], hof: false, peak: "2010–2015", fanFave: true },
-    { name: "Russell Wilson", pos: "QB", era: "active", teams: ["SEA","DEN","PIT"], age: 36, hof: false },
-    { name: "Richard Sherman", pos: "CB", era: "retired", teams: ["SEA"], hof: false, peak: "2011–2017", fanFave: true },
-    { name: "Earl Thomas", pos: "S", era: "retired", teams: ["SEA"], hof: false, peak: "2010–2019", fanFave: true },
-    { name: "Steve Largent", pos: "WR", era: "retired", teams: ["SEA"], hof: true, peak: "1976–1989" },
-    { name: "Kenny Easley", pos: "S", era: "retired", teams: ["SEA"], hof: true, peak: "1981–1987" },
-    { name: "Cortez Kennedy", pos: "DT", era: "retired", teams: ["SEA"], hof: true, peak: "1990–2000" },
-    { name: "Bobby Wagner", pos: "LB", era: "active", teams: ["SEA"], age: 34, hof: false, fanFave: true },
-    { name: "DK Metcalf", pos: "WR", era: "active", teams: ["SEA"], age: 27, hof: false },
-    { name: "Walter Jones", pos: "OT", era: "retired", teams: ["SEA"], hof: true, peak: "1997–2008" },
-    { name: "Marcus Trufant", pos: "CB", era: "retired", teams: ["SEA"], hof: false, peak: "2003–2012", fanFave: true },
-    { name: "Matt Hasselbeck", pos: "QB", era: "retired", teams: ["SEA"], hof: false, peak: "2001–2010", fanFave: true },
-  ],
-  franchise_bears: [
-    { name: "Walter Payton", pos: "RB", era: "retired", teams: ["CHI"], hof: true, peak: "1975–1987" },
-    { name: "Dick Butkus", pos: "LB", era: "retired", teams: ["CHI"], hof: true, peak: "1965–1973" },
-    { name: "Gale Sayers", pos: "RB", era: "retired", teams: ["CHI"], hof: true, peak: "1965–1971" },
-    { name: "Mike Singletary", pos: "LB", era: "retired", teams: ["CHI"], hof: true, peak: "1981–1992" },
-    { name: "Brian Urlacher", pos: "LB", era: "retired", teams: ["CHI"], hof: true, peak: "2000–2012", fanFave: true },
-    { name: "Devin Hester", pos: "KR", era: "retired", teams: ["CHI"], hof: true, peak: "2006–2016", fanFave: true },
-    { name: "Sid Luckman", pos: "QB", era: "retired", teams: ["CHI"], hof: true, peak: "1939–1950" },
-    { name: "Alshon Jeffery", pos: "WR", era: "retired", teams: ["CHI"], hof: false, peak: "2012–2018", fanFave: true },
-    { name: "Jay Cutler", pos: "QB", era: "retired", teams: ["CHI"], hof: false, peak: "2009–2016", fanFave: true },
-    { name: "Caleb Williams", pos: "QB", era: "active", teams: ["CHI"], age: 23, hof: false },
-    { name: "D.J. Moore", pos: "WR", era: "active", teams: ["CHI"], age: 27, hof: false },
-    { name: "Jim McMahon", pos: "QB", era: "retired", teams: ["CHI"], hof: false, peak: "1982–1988", fanFave: true },
-  ],
-  franchise_broncos: [
-    { name: "John Elway", pos: "QB", era: "retired", teams: ["DEN"], hof: true, peak: "1983–1998" },
-    { name: "Peyton Manning", pos: "QB", era: "retired", teams: ["DEN"], hof: true, peak: "2012–2015" },
-    { name: "Terrell Davis", pos: "RB", era: "retired", teams: ["DEN"], hof: true, peak: "1995–2001", fanFave: true },
-    { name: "Shannon Sharpe", pos: "TE", era: "retired", teams: ["DEN"], hof: true, peak: "1990–2003" },
-    { name: "Rod Smith", pos: "WR", era: "retired", teams: ["DEN"], hof: false, peak: "1995–2006", fanFave: true },
-    { name: "DeMarcus Ware", pos: "LB", era: "retired", teams: ["DEN"], hof: true, peak: "2014–2016" },
-    { name: "Von Miller", pos: "LB", era: "active", teams: ["DEN","BUF","LAR"], age: 36, hof: false, fanFave: true },
-    { name: "Champ Bailey", pos: "CB", era: "retired", teams: ["DEN"], hof: true, peak: "2004–2013" },
-    { name: "Floyd Little", pos: "RB", era: "retired", teams: ["DEN"], hof: true, peak: "1967–1975" },
-    { name: "Demaryius Thomas", pos: "WR", era: "retired", teams: ["DEN"], hof: false, peak: "2010–2018", fanFave: true },
-    { name: "Tim Tebow", pos: "QB", era: "retired", teams: ["DEN"], hof: false, peak: "2010–2011", fanFave: true },
-    { name: "Karl Mecklenburg", pos: "LB", era: "retired", teams: ["DEN"], hof: false, peak: "1983–1994", fanFave: true },
-  ],
-  franchise_giants: [
-    { name: "Lawrence Taylor", pos: "LB", era: "retired", teams: ["NYG"], hof: true, peak: "1981–1993" },
-    { name: "Michael Strahan", pos: "DE", era: "retired", teams: ["NYG"], hof: true, peak: "1993–2007", fanFave: true },
-    { name: "Eli Manning", pos: "QB", era: "retired", teams: ["NYG"], hof: false, peak: "2004–2019", fanFave: true },
-    { name: "Frank Gifford", pos: "RB", era: "retired", teams: ["NYG"], hof: true, peak: "1952–1964" },
-    { name: "Sam Huff", pos: "LB", era: "retired", teams: ["NYG"], hof: true, peak: "1956–1964" },
-    { name: "Phil Simms", pos: "QB", era: "retired", teams: ["NYG"], hof: false, peak: "1979–1993", fanFave: true },
-    { name: "Odell Beckham Jr.", pos: "WR", era: "active", teams: ["NYG","CLE","LAR"], age: 32, hof: false, fanFave: true },
-    { name: "Tiki Barber", pos: "RB", era: "retired", teams: ["NYG"], hof: false, peak: "1997–2006", fanFave: true },
-    { name: "Carl Banks", pos: "LB", era: "retired", teams: ["NYG"], hof: false, peak: "1984–1995", fanFave: true },
-    { name: "Jeremy Shockey", pos: "TE", era: "retired", teams: ["NYG"], hof: false, peak: "2002–2010", fanFave: true },
-    { name: "Plaxico Burress", pos: "WR", era: "retired", teams: ["NYG"], hof: false, peak: "2005–2012", fanFave: true },
-    { name: "Amani Toomer", pos: "WR", era: "retired", teams: ["NYG"], hof: false, peak: "1996–2007", fanFave: true },
   ],
 };
 
@@ -983,32 +703,47 @@ export default function App() {
   const [config, setConfig] = useState(null);
   const [gamePlayers, setGamePlayers] = useState([]);
   const [p1Result, setP1Result] = useState(null);
-  const [challengeData, setChallengeData] = useState(null); // { gameData, p1Result }
+  const [challengeData, setChallengeData] = useState(null);
+  const nflPlayersRef = useRef(NFL_PLAYERS_FALLBACK);
 
-  // On mount, check URL for challenge
+  // On mount: fetch players from Google Sheet, then check URL
   useEffect(() => {
-    const { game, p1result } = getURLParams();
-    if (game && p1result) {
-      const gameData = decodeGame(game);
-      if (gameData) {
-        const pool = NFL_PLAYERS[gameData.config.poolId] || NFL_PLAYERS.all_time_greats;
-        const allPlayers = seededShuffle(pool, gameData.seed).slice(0, gameData.config.totalPlayers);
-        const p1 = decodeResult(p1result, allPlayers);
-        if (p1) {
-          setChallengeData({ gameData, p1Result: p1, allPlayers });
-          setScreen("challenge-received");
-          return;
+    async function init() {
+      try {
+        const res = await fetch(SHEET_API_URL);
+        const rows = await res.json();
+        const pools = buildPlayerPools(rows);
+        if (Object.keys(pools).length > 0) {
+          nflPlayersRef.current = pools;
+        }
+      } catch (e) {
+        console.warn("Sheet fetch failed, using fallback players", e);
+      }
+
+      const { game, p1result } = getURLParams();
+      if (game && p1result) {
+        const gameData = decodeGame(game);
+        if (gameData) {
+          const pool = nflPlayersRef.current[gameData.config.poolId] || nflPlayersRef.current.all_time_greats;
+          const allPlayers = seededShuffle(pool, gameData.seed).slice(0, gameData.config.totalPlayers);
+          const p1 = decodeResult(p1result, allPlayers);
+          if (p1) {
+            setChallengeData({ gameData, p1Result: p1, allPlayers });
+            setScreen("challenge-received");
+            return;
+          }
         }
       }
+      setScreen("setup");
     }
-    setScreen("setup");
+    init();
   }, []);
 
   const handleStart = (cfg) => {
     const seed = cfg.seed || (Math.floor(Math.random() * 2147483647) + 1);
     const cfgWithSeed = { ...cfg, seed };
     setConfig(cfgWithSeed);
-    const pool = NFL_PLAYERS[cfg.poolId] || NFL_PLAYERS.all_time_greats;
+    const pool = nflPlayersRef.current[cfg.poolId] || nflPlayersRef.current.all_time_greats;
     const selected = seededShuffle(pool, seed).slice(0, cfg.totalPlayers);
     setGamePlayers(selected);
     setP1Result(null);
