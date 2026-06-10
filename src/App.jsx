@@ -84,14 +84,16 @@ function clearURLParams() {
 }
 
 // ── NFL Player Database — loaded from Google Sheet ───────────────────────────
-const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbwsTwAaFAWHSlli50kTNAiPN6u-CcQ_VTwIFBg2NoTWtcwd5wgSF1XzuFFFkvvekY9u/exec";
+const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzNQBvJxbUN2NMjC2VvJzCFSE4tevFxrImtWdzf7Pq8XTDEByp-nxOvDnUOgVatO2qS/exec";
 
 // Convert flat sheet rows into pool-keyed object
 function buildPlayerPools(rows) {
   const pools = {};
+  pools["all_players"] = [];
+  const allPlayersSeen = new Set();
+
   rows.forEach(row => {
     if (!row.name || !row.pool) return;
-    const poolIds = String(row.pool).split(",").map(p => p.trim()).filter(Boolean);
     const player = {
       name: String(row.name),
       pos: String(row.pos || ""),
@@ -102,9 +104,18 @@ function buildPlayerPools(rows) {
     };
     if (row.age && String(row.age).trim() !== "") player.age = parseInt(row.age);
     if (row.peak && String(row.peak).trim() !== "") player.peak = String(row.peak);
+
+    // Add to all_players automatically
+    if (!allPlayersSeen.has(player.name)) {
+      allPlayersSeen.add(player.name);
+      pools["all_players"].push(player);
+    }
+
+    // Add to specific pools from pool column
+    const poolIds = String(row.pool).split(",").map(p => p.trim()).filter(Boolean);
     poolIds.forEach(pid => {
+      if (pid === "all_players") return;
       if (!pools[pid]) pools[pid] = [];
-      // avoid duplicates
       if (!pools[pid].find(p => p.name === player.name)) {
         pools[pid].push(player);
       }
@@ -115,15 +126,19 @@ function buildPlayerPools(rows) {
 
 // Fallback minimal pool in case sheet fails
 const NFL_PLAYERS_FALLBACK = {
-  all_time_greats: [
+  all_players: [
+    { name: "Tom Brady", pos: "QB", era: "retired", teams: ["NE", "TB"], hof: true, peak: "2001–2022" },
     { name: "Jerry Rice", pos: "WR", era: "retired", teams: ["SF"], hof: true, peak: "1986–2002" },
-    { name: "Tom Brady", pos: "QB", era: "retired", teams: ["NE","TB"], hof: true, peak: "2001–2022" },
     { name: "Barry Sanders", pos: "RB", era: "retired", teams: ["DET"], hof: true, peak: "1989–1998" },
+    { name: "Lawrence Taylor", pos: "LB", era: "retired", teams: ["NYG"], hof: true, peak: "1981–1993" },
     { name: "Patrick Mahomes", pos: "QB", era: "active", teams: ["KC"], age: 29, hof: false },
     { name: "Lamar Jackson", pos: "QB", era: "active", teams: ["BAL"], age: 27, hof: false },
-    { name: "Lawrence Taylor", pos: "LB", era: "retired", teams: ["NYG"], hof: true, peak: "1981–1993" },
     { name: "Walter Payton", pos: "RB", era: "retired", teams: ["CHI"], hof: true, peak: "1975–1987" },
-    { name: "Jerry Rice", pos: "WR", era: "retired", teams: ["SF"], hof: true, peak: "1986–2002" },
+    { name: "Peyton Manning", pos: "QB", era: "retired", teams: ["IND", "DEN"], hof: true, peak: "1998–2015" },
+    { name: "Randy Moss", pos: "WR", era: "retired", teams: ["MIN", "NE"], hof: true, peak: "1998–2012" },
+    { name: "Reggie White", pos: "DE", era: "retired", teams: ["PHI", "GB"], hof: true, peak: "1985–2000" },
+    { name: "Emmitt Smith", pos: "RB", era: "retired", teams: ["DAL"], hof: true, peak: "1990–2004" },
+    { name: "Joe Montana", pos: "QB", era: "retired", teams: ["SF"], hof: true, peak: "1979–1994" },
   ],
 };
 
@@ -132,11 +147,12 @@ const POOL_GROUPS = [
   {
     label: "🌐 General",
     options: [
-      { id: "all_time_greats", label: "All-Time Greats", desc: "Legends from every era" },
-      { id: "current_stars", label: "Current Stars", desc: "Today's best players" },
+      { id: "all_players", label: "All Players", desc: "Everybody in the club" },
       { id: "hof_only", label: "Hall of Famers", desc: "Only the immortals" },
+      { id: "current_stars", label: "Current Stars", desc: "Today's best players" },
       { id: "fan_favorites", label: "Fan Favorites", desc: "Beloved & controversial players" },
-      { id: "current_over_30", label: "Active Over 30", desc: "Veterans still playing" },
+      { id: "current_over_30", label: "Wily Old Vets", desc: "What was the NFL like before COVID, grandpa?" },
+      { id: "next_gen", label: "Next Gen", desc: "They got next." },
     ]
   },
   {
@@ -145,23 +161,47 @@ const POOL_GROUPS = [
       { id: "qbs_only", label: "QBs Only", desc: "Quarterbacks across history" },
       { id: "rbs_only", label: "RBs Only", desc: "Running backs across history" },
       { id: "wrs_only", label: "WRs Only", desc: "Wide receivers across history" },
+      { id: "tes_only", label: "TEs Only", desc: "Tight ends across history" },
+      { id: "linemen_only", label: "The Trenches", desc: "Best of the Big Uglies" },
+      { id: "offense_only", label: "All Offense", desc: "All offensive skill positions" },
+      { id: "defense_only", label: "All Defense", desc: "All defensive positions" },
     ]
   },
   {
     label: "🏟️ Franchise All-Time Greats",
     options: [
-      { id: "franchise_cowboys", label: "Dallas Cowboys", desc: "America's Team" },
+      { id: "franchise_cowboys", label: "Dallas Cowboys", desc: "haven't won a SB since before Basti was born" },
       { id: "franchise_patriots", label: "New England Patriots", desc: "Dynasty era & legends" },
       { id: "franchise_49ers", label: "San Francisco 49ers", desc: "The dynasty & beyond" },
       { id: "franchise_steelers", label: "Pittsburgh Steelers", desc: "Steel Curtain era & more" },
       { id: "franchise_packers", label: "Green Bay Packers", desc: "Titletown legends" },
       { id: "franchise_chiefs", label: "Kansas City Chiefs", desc: "From Len Dawson to Mahomes" },
-      { id: "franchise_eagles", label: "Philadelphia Eagles", desc: "From Reggie White to Hurts" },
+      { id: "franchise_eagles", label: "Philadelphia Eagles", desc: "Essentially the best to ever do it" },
       { id: "franchise_ravens", label: "Baltimore Ravens", desc: "Ray Lewis & beyond" },
       { id: "franchise_seahawks", label: "Seattle Seahawks", desc: "LOB era & franchise icons" },
       { id: "franchise_bears", label: "Chicago Bears", desc: "Monsters of the Midway" },
       { id: "franchise_broncos", label: "Denver Broncos", desc: "Elway, Manning & more" },
       { id: "franchise_giants", label: "New York Giants", desc: "LT, Eli & franchise greats" },
+      { id: "franchise_raiders", label: "Las Vegas Raiders", desc: "Silver and Black legends" },
+      { id: "franchise_colts", label: "Indianapolis Colts", desc: "Manning era & beyond" },
+      { id: "franchise_chargers", label: "Los Angeles Chargers", desc: "LT, Rivers & more" },
+      { id: "franchise_titans", label: "Tennessee Titans", desc: "McNair, George & beyond" },
+      { id: "franchise_browns", label: "Cleveland Browns", desc: "Dawg Pound legends" },
+      { id: "franchise_texans", label: "Houston Texans", desc: "JJ Watt era & more" },
+      { id: "franchise_jaguars", label: "Jacksonville Jaguars", desc: "Brunell era & beyond" },
+      { id: "franchise_bills", label: "Buffalo Bills", desc: "Kelly era to present" },
+      { id: "franchise_jets", label: "New York Jets", desc: "Broadway Joe to Revis" },
+      { id: "franchise_washington", label: "Washington Commanders", desc: "Portis, Taylor & more" },
+      { id: "franchise_buccaneers", label: "Tampa Bay Buccaneers", desc: "Super Bowl eras" },
+      { id: "franchise_cardinals", label: "Arizona Cardinals", desc: "Warner, Fitz & more" },
+      { id: "franchise_rams", label: "Los Angeles Rams", desc: "Greatest Show on Turf & beyond" },
+      { id: "franchise_lions", label: "Detroit Lions", desc: "Calvin, Barry & more" },
+      { id: "franchise_vikings", label: "Minnesota Vikings", desc: "Purple People Eaters to present" },
+      { id: "franchise_saints", label: "New Orleans Saints", desc: "Brees era & beyond" },
+      { id: "franchise_falcons", label: "Atlanta Falcons", desc: "Vick, Ryan & more" },
+      { id: "franchise_panthers", label: "Carolina Panthers", desc: "Cam, Kuechly & more" },
+      { id: "franchise_dolphins", label: "Miami Dolphins", desc: "Marino & Company" },
+      { id: "franchise_bengals", label: "Cincinatti Bengals", desc: "Joe, Jamarr & more" },
     ]
   }
 ];
@@ -308,7 +348,7 @@ function PlayerCard({ player, onKeep, onCut, showInfo, decision = null, compact 
 // ── Setup Screen ──────────────────────────────────────────────────────────────
 function SetupScreen({ onStart }) {
   const [mode, setMode] = useState(null);
-  const [poolId, setPoolId] = useState("all_time_greats");
+  const [poolId, setPoolId] = useState("all_players");
   const [totalPlayers, setTotalPlayers] = useState(8);
   const [keepCount, setKeepCount] = useState(3);
   const [allowInfo, setAllowInfo] = useState(true);
@@ -739,33 +779,62 @@ export default function App() {
     init();
   }, []);
 
-  const handleStart = (cfg) => {
-    const seed = cfg.seed || (Math.floor(Math.random() * 2147483647) + 1);
-    const cfgWithSeed = { ...cfg, seed };
-    setConfig(cfgWithSeed);
-    const pool = nflPlayersRef.current[cfg.poolId] || nflPlayersRef.current.all_time_greats;
-    const selected = seededShuffle(pool, seed).slice(0, cfg.totalPlayers);
-    setGamePlayers(selected);
-    setP1Result(null);
-    clearURLParams();
-    setScreen("game-p1");
+const handleStart = (cfg) => {
+  const seed = cfg.seed || (Math.floor(Math.random() * 2147483647) + 1);
+  const cfgWithSeed = { ...cfg, seed };
+  setConfig(cfgWithSeed);
+
+  const OFFENSE_POS = ["QB", "RB", "WR", "TE", "FB", "OT", "OG", "C", "OL"];
+  const DEFENSE_POS = ["DE", "DT", "LB", "CB", "S", "DB", "NT", "DL"];
+
+  const positionPools = {
+    qbs_only: ["QB"],
+    rbs_only: ["RB", "FB"],
+    wrs_only: ["WR"],
+    tes_only: ["TE"],
+    linemen_only: ["OT", "OG", "C", "OL", "DE", "DT", "DL"],
+    offense_only: OFFENSE_POS,
+    defense_only: DEFENSE_POS,
   };
 
-  const handleP1Complete = (result) => {
-    setP1Result(result);
-    if (config.mode === "challenge") {
-      setScreen("challenge-link");
-    } else {
-      setScreen("results");
-    }
-  };
+  let pool;
+  if (positionPools[cfg.poolId]) {
+    const positions = positionPools[cfg.poolId];
+    const allPlayers = Object.values(nflPlayersRef.current).flat();
+    const seen = new Set();
+    pool = allPlayers.filter(p => {
+      if (positions.includes(p.pos) && !seen.has(p.name)) {
+        seen.add(p.name);
+        return true;
+      }
+      return false;
+    });
+  } else {
+    pool = nflPlayersRef.current[cfg.poolId] || nflPlayersRef.current.all_time_greats;
+  }
 
-  const handleChallengeAccepted = () => {
-    const { gameData, allPlayers } = challengeData;
-    setConfig({ ...gameData.config, seed: gameData.seed });
-    setGamePlayers(allPlayers);
-    setScreen("game-p2");
-  };
+  const selected = seededShuffle(pool, seed).slice(0, cfg.totalPlayers);
+  setGamePlayers(selected);
+  setP1Result(null);
+  clearURLParams();
+  setScreen("game-p1");
+};
+
+const handleP1Complete = (result) => {
+  setP1Result(result);
+  if (config.mode === "challenge") {
+    setScreen("challenge-link");
+  } else {
+    setScreen("results");
+  }
+};
+
+const handleChallengeAccepted = () => {
+  const { gameData, allPlayers } = challengeData;
+  setConfig({ ...gameData.config, seed: gameData.seed });
+  setGamePlayers(allPlayers);
+  setScreen("game-p2");
+};
 
   const handleP2Complete = (result) => {
     if (challengeData) {
