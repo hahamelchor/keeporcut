@@ -89,9 +89,11 @@ const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzNQBvJxbUN2NMjC2
 // Convert flat sheet rows into pool-keyed object
 function buildPlayerPools(rows) {
   const pools = {};
+  pools["all_players"] = [];
+  const allPlayersSeen = new Set();
+
   rows.forEach(row => {
     if (!row.name || !row.pool) return;
-    const poolIds = String(row.pool).split(",").map(p => p.trim()).filter(Boolean);
     const player = {
       name: String(row.name),
       pos: String(row.pos || ""),
@@ -102,9 +104,18 @@ function buildPlayerPools(rows) {
     };
     if (row.age && String(row.age).trim() !== "") player.age = parseInt(row.age);
     if (row.peak && String(row.peak).trim() !== "") player.peak = String(row.peak);
+
+    // Add to all_players automatically
+    if (!allPlayersSeen.has(player.name)) {
+      allPlayersSeen.add(player.name);
+      pools["all_players"].push(player);
+    }
+
+    // Add to specific pools from pool column
+    const poolIds = String(row.pool).split(",").map(p => p.trim()).filter(Boolean);
     poolIds.forEach(pid => {
+      if (pid === "all_players") return;
       if (!pools[pid]) pools[pid] = [];
-      // avoid duplicates
       if (!pools[pid].find(p => p.name === player.name)) {
         pools[pid].push(player);
       }
@@ -115,15 +126,19 @@ function buildPlayerPools(rows) {
 
 // Fallback minimal pool in case sheet fails
 const NFL_PLAYERS_FALLBACK = {
-  all_time_greats: [
+  all_players: [
+    { name: "Tom Brady", pos: "QB", era: "retired", teams: ["NE", "TB"], hof: true, peak: "2001–2022" },
     { name: "Jerry Rice", pos: "WR", era: "retired", teams: ["SF"], hof: true, peak: "1986–2002" },
-    { name: "Tom Brady", pos: "QB", era: "retired", teams: ["NE","TB"], hof: true, peak: "2001–2022" },
     { name: "Barry Sanders", pos: "RB", era: "retired", teams: ["DET"], hof: true, peak: "1989–1998" },
+    { name: "Lawrence Taylor", pos: "LB", era: "retired", teams: ["NYG"], hof: true, peak: "1981–1993" },
     { name: "Patrick Mahomes", pos: "QB", era: "active", teams: ["KC"], age: 29, hof: false },
     { name: "Lamar Jackson", pos: "QB", era: "active", teams: ["BAL"], age: 27, hof: false },
-    { name: "Lawrence Taylor", pos: "LB", era: "retired", teams: ["NYG"], hof: true, peak: "1981–1993" },
     { name: "Walter Payton", pos: "RB", era: "retired", teams: ["CHI"], hof: true, peak: "1975–1987" },
-    { name: "Jerry Rice", pos: "WR", era: "retired", teams: ["SF"], hof: true, peak: "1986–2002" },
+    { name: "Peyton Manning", pos: "QB", era: "retired", teams: ["IND", "DEN"], hof: true, peak: "1998–2015" },
+    { name: "Randy Moss", pos: "WR", era: "retired", teams: ["MIN", "NE"], hof: true, peak: "1998–2012" },
+    { name: "Reggie White", pos: "DE", era: "retired", teams: ["PHI", "GB"], hof: true, peak: "1985–2000" },
+    { name: "Emmitt Smith", pos: "RB", era: "retired", teams: ["DAL"], hof: true, peak: "1990–2004" },
+    { name: "Joe Montana", pos: "QB", era: "retired", teams: ["SF"], hof: true, peak: "1979–1994" },
   ],
 };
 
@@ -333,7 +348,7 @@ function PlayerCard({ player, onKeep, onCut, showInfo, decision = null, compact 
 // ── Setup Screen ──────────────────────────────────────────────────────────────
 function SetupScreen({ onStart }) {
   const [mode, setMode] = useState(null);
-  const [poolId, setPoolId] = useState("all_time_greats");
+  const [poolId, setPoolId] = useState("all_players");
   const [totalPlayers, setTotalPlayers] = useState(8);
   const [keepCount, setKeepCount] = useState(3);
   const [allowInfo, setAllowInfo] = useState(true);
