@@ -4,10 +4,10 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 
 // Seeded random — same seed always gives same shuffle
 function seededRandom(seed) {
-  let s = seed;
+  let s = Math.abs(seed) >>> 0;
   return function() {
-    s = (s * 1664525 + 1013904223) & 0xffffffff;
-    return (s >>> 0) / 0xffffffff;
+    s = ((s * 1664525) + 1013904223) >>> 0;
+    return s / 4294967296;
   };
 }
 
@@ -1011,7 +1011,7 @@ export default function App() {
   }, []);
 
   const handleStart = (cfg) => {
-    const seed = cfg.seed || (Math.random() * 0xffffffff | 0);
+    const seed = cfg.seed || (Math.floor(Math.random() * 2147483647) + 1);
     const cfgWithSeed = { ...cfg, seed };
     setConfig(cfgWithSeed);
     const pool = NFL_PLAYERS[cfg.poolId] || NFL_PLAYERS.all_time_greats;
