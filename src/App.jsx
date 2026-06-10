@@ -646,10 +646,17 @@ function ResultsScreen({ results, config, onPlayAgain, onHome, isChallenge = fal
   const p2 = results[1];
   const poolLabel = ALL_POOL_OPTIONS.find(o => o.id === config.poolId)?.label || config.poolId;
 
+  const debateQuestions = [
+    "🏆 One game, all else equal, which squad is winning?",
+    "✂️ Who was the most disrespectful cut on either roster?",
+    "🤦 Which keep was the biggest mistake?",
+  ];
+  const debateQuestion = debateQuestions[Math.floor(Math.random() * debateQuestions.length)];
+
   const shareText = isChallenge && p2
     ? `🏈 NFL Keep or Cut — Head-to-Head Results!\n\nPool: ${poolLabel} · Keep ${config.keepCount} of ${config.totalPlayers}\n\n👤 Player 1\n✅ Kept: ${p1.kept.map(p => p.name).join(", ")}\n❌ Cut: ${p1.cut.map(p => p.name).join(", ")}\n\n⚔️ Player 2\n✅ Kept: ${p2.kept.map(p => p.name).join(", ")}\n❌ Cut: ${p2.cut.map(p => p.name).join(", ")}\n\n${debateQuestion}\n\n🎮 Want to play? keeporcut.vercel.app`
-    : `🏈 NFL Keep or Cut\n\nPool: ${poolLabel} · Keeping ${config.keepCount} of ${config.totalPlayers}\n\n✅ Kept: ${p1.kept.map(p => p.name).join(", ")}\n❌ Cut: ${p1.cut.map(p => p.name).join(", ")}\n\n${debateQuestion}\n\n🎮 Think you can do better? keeporcut.vercel.app`;
-  
+    : `🏈 NFL Keep or Cut\n\nPool: ${poolLabel} · Keeping ${config.keepCount} of ${config.totalPlayers}\n\n✅ Kept: ${p1.kept.map(p => p.name).join(", ")}\n❌ Cut: ${p1.cut.map(p => p.name).join(", ")}\n\n${debateQuestion}\n\n🎮 Think you can do better? keeporcut.vercel.app`;  
+ 
   const ResultPanel = ({ result, label }) => (
     <div style={{ flex: 1, minWidth: "0" }}>
       {label && <div style={{ color: "#4a90d9", fontSize: "12px", fontWeight: 800, letterSpacing: "1px", marginBottom: "10px" }}>{label}</div>}
