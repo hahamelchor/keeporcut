@@ -30,22 +30,22 @@ function encodeResult(kept, cut) {
 function decodeResult(str) {
   try { return JSON.parse(decodeURIComponent(fromUrlSafeB64(str))); } catch { return null; }
 }
-// Single ?c= param with a dot separator — no = signs in the URL at all
+// Path-based URL: /c/GAMECODE.P1CODE — no = signs at all, survives iMessage
 function buildChallengeURL(gameCode, p1Code) {
-  return `${window.location.origin}${window.location.pathname}?c=${gameCode}.${p1Code}`;
+  return `${window.location.origin}/c/${gameCode}.${p1Code}`;
 }
 function getURLParams() {
   if (typeof window === "undefined") return {};
-  const params = new URLSearchParams(window.location.search);
-  const combined = params.get("c");
-  if (combined) {
-    const dot = combined.indexOf(".");
-    if (dot > 0) return { game: combined.slice(0, dot), p1result: combined.slice(dot + 1) };
+  const path = window.location.pathname;
+  if (path.startsWith("/c/")) {
+    const token = path.slice(3);
+    const dot = token.indexOf(".");
+    if (dot > 0) return { game: token.slice(0, dot), p1result: token.slice(dot + 1) };
   }
-  return { game: params.get("game"), p1result: params.get("p1result") };
+  return {};
 }
 function clearURLParams() {
-  window.history.replaceState({}, "", window.location.pathname);
+  window.history.replaceState({}, "", "/");
 }
 
 // ── NFL Player Database ───────────────────────────────────────────────────────
