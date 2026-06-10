@@ -39,22 +39,16 @@ function fromUrlSafeB64(str) {
   return atob(padded.replace(/-/g, "+").replace(/_/g, "/"));
 }
 
-// Game is encoded as: SEED-POOLID-TOTAL-KEEP (short, readable)
+// Game encoded as: SEED|POOLID|TOTAL|KEEP|INFO — pipe separator avoids underscore/dash conflicts
 function encodeGame(seed, config) {
-  const poolShort = config.poolId.replace("franchise_", "f_").replace("current_", "c_").replace("all_time_", "at_");
-  return `${seed}-${poolShort}-${config.totalPlayers}-${config.keepCount}-${config.allowInfo ? 1 : 0}`;
+  return [seed, config.poolId, config.totalPlayers, config.keepCount, config.allowInfo ? 1 : 0].join("|");
 }
 function decodeGame(str) {
   try {
-    const parts = str.split("-");
+    const parts = str.split("|");
     if (parts.length < 5) return null;
-    const seed = parseInt(parts[0]);
-    const allowInfo = parts[parts.length - 1] === "1";
-    const keepCount = parseInt(parts[parts.length - 2]);
-    const totalPlayers = parseInt(parts[parts.length - 3]);
-    const poolShort = parts.slice(1, parts.length - 3).join("-");
-    const poolId = poolShort.replace("f_", "franchise_").replace("c_", "current_").replace("at_", "all_time_");
-    return { seed, config: { poolId, totalPlayers, keepCount, allowInfo, mode: "challenge" } };
+    const [seed, poolId, totalPlayers, keepCount, allowInfo] = parts;
+    return { seed: parseInt(seed), config: { poolId, totalPlayers: parseInt(totalPlayers), keepCount: parseInt(keepCount), allowInfo: allowInfo === "1", mode: "challenge" } };
   } catch { return null; }
 }
 
