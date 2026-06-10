@@ -84,7 +84,7 @@ function clearURLParams() {
 }
 
 // ── NFL Player Database — loaded from Google Sheet ───────────────────────────
-const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbwsTwAaFAWHSlli50kTNAiPN6u-CcQ_VTwIFBg2NoTWtcwd5wgSF1XzuFFFkvvekY9u/exec";
+const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzNQBvJxbUN2NMjC2VvJzCFSE4tevFxrImtWdzf7Pq8XTDEByp-nxOvDnUOgVatO2qS/exec";
 
 // Convert flat sheet rows into pool-keyed object
 function buildPlayerPools(rows) {
@@ -132,11 +132,12 @@ const POOL_GROUPS = [
   {
     label: "🌐 General",
     options: [
-      { id: "all_time_greats", label: "All-Time Greats", desc: "Legends from every era" },
-      { id: "current_stars", label: "Current Stars", desc: "Today's best players" },
+      { id: "all_players", label: "All Players", desc: "Everybody in the club" },
       { id: "hof_only", label: "Hall of Famers", desc: "Only the immortals" },
+      { id: "current_stars", label: "Current Stars", desc: "Today's best players" },
       { id: "fan_favorites", label: "Fan Favorites", desc: "Beloved & controversial players" },
-      { id: "current_over_30", label: "Active Over 30", desc: "Veterans still playing" },
+      { id: "current_over_30", label: "Wily Old Vets", desc: "What was the NFL like before COVID, grandpa?" },
+      { id: "next_gen", label: "Next Gen", desc: "They got next." },
     ]
   },
   {
@@ -145,18 +146,20 @@ const POOL_GROUPS = [
       { id: "qbs_only", label: "QBs Only", desc: "Quarterbacks across history" },
       { id: "rbs_only", label: "RBs Only", desc: "Running backs across history" },
       { id: "wrs_only", label: "WRs Only", desc: "Wide receivers across history" },
+      { id: "tes_only", label: "TEs Only", desc: "Tight Ends across history" },
+      { id: "def_only", label: "Defensive Greats", desc: "The best defenders old & new" },
     ]
   },
   {
     label: "🏟️ Franchise All-Time Greats",
     options: [
-      { id: "franchise_cowboys", label: "Dallas Cowboys", desc: "America's Team" },
+      { id: "franchise_cowboys", label: "Dallas Cowboys", desc: "wE dEM bOyS! (haven't won a SB since before Basti was born" },
       { id: "franchise_patriots", label: "New England Patriots", desc: "Dynasty era & legends" },
       { id: "franchise_49ers", label: "San Francisco 49ers", desc: "The dynasty & beyond" },
       { id: "franchise_steelers", label: "Pittsburgh Steelers", desc: "Steel Curtain era & more" },
       { id: "franchise_packers", label: "Green Bay Packers", desc: "Titletown legends" },
       { id: "franchise_chiefs", label: "Kansas City Chiefs", desc: "From Len Dawson to Mahomes" },
-      { id: "franchise_eagles", label: "Philadelphia Eagles", desc: "From Reggie White to Hurts" },
+      { id: "franchise_eagles", label: "Philadelphia Eagles", desc: "Essentially the best to ever do it" },
       { id: "franchise_ravens", label: "Baltimore Ravens", desc: "Ray Lewis & beyond" },
       { id: "franchise_seahawks", label: "Seattle Seahawks", desc: "LOB era & franchise icons" },
       { id: "franchise_bears", label: "Chicago Bears", desc: "Monsters of the Midway" },
