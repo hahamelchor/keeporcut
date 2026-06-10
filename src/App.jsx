@@ -39,13 +39,13 @@ function fromUrlSafeB64(str) {
   return atob(padded.replace(/-/g, "+").replace(/_/g, "/"));
 }
 
-// Game encoded as: SEED|POOLID|TOTAL|KEEP|INFO — pipe separator avoids underscore/dash conflicts
+// Game encoded as: SEED~POOLID~TOTAL~KEEP~INFO — tilde is URL-safe and never appears in pool IDs
 function encodeGame(seed, config) {
-  return [seed, config.poolId, config.totalPlayers, config.keepCount, config.allowInfo ? 1 : 0].join("|");
+  return [seed, config.poolId, config.totalPlayers, config.keepCount, config.allowInfo ? 1 : 0].join("~");
 }
 function decodeGame(str) {
   try {
-    const parts = str.split("|");
+    const parts = str.split("~");
     if (parts.length < 5) return null;
     const [seed, poolId, totalPlayers, keepCount, allowInfo] = parts;
     return { seed: parseInt(seed), config: { poolId, totalPlayers: parseInt(totalPlayers), keepCount: parseInt(keepCount), allowInfo: allowInfo === "1", mode: "challenge" } };
