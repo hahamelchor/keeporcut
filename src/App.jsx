@@ -347,7 +347,7 @@ function PlayerCard({ player, onKeep, onCut, showInfo, decision = null, compact 
 
 // ── Setup Screen ──────────────────────────────────────────────────────────────
 function SetupScreen({ onStart }) {
-  const [mode, setMode] = useState(null);
+  const [mode, setMode] = useState("challenge");
   const [poolId, setPoolId] = useState("all_players");
   const [totalPlayers, setTotalPlayers] = useState(8);
   const [keepCount, setKeepCount] = useState(3);
@@ -647,9 +647,9 @@ function ResultsScreen({ results, config, onPlayAgain, onHome, isChallenge = fal
   const poolLabel = ALL_POOL_OPTIONS.find(o => o.id === config.poolId)?.label || config.poolId;
 
   const shareText = isChallenge && p2
-    ? `🏈 NFL Keep or Cut — Head-to-Head Results!\n\nPool: ${poolLabel} · Keep ${config.keepCount} of ${config.totalPlayers}\n\n👤 Player 1 kept: ${p1.kept.map(p => p.name).join(", ")}\n⚔️ Player 2 kept: ${p2.kept.map(p => p.name).join(", ")}\n\nWho had the better squad? 🔥`
-    : `🏈 NFL Keep or Cut\n\nPool: ${poolLabel} · Keeping ${config.keepCount} of ${config.totalPlayers}\n\n✅ Kept: ${p1.kept.map(p => p.name).join(", ")}\n❌ Cut: ${p1.cut.map(p => p.name).join(", ")}\n\nWho would YOU keep? 🔥`;
-
+    ? `🏈 NFL Keep or Cut — Head-to-Head Results!\n\nPool: ${poolLabel} · Keep ${config.keepCount} of ${config.totalPlayers}\n\n👤 Player 1\n✅ Kept: ${p1.kept.map(p => p.name).join(", ")}\n❌ Cut: ${p1.cut.map(p => p.name).join(", ")}\n\n⚔️ Player 2\n✅ Kept: ${p2.kept.map(p => p.name).join(", ")}\n❌ Cut: ${p2.cut.map(p => p.name).join(", ")}\n\n${debateQuestion}\n\n🎮 Want to play? keeporcut.vercel.app`
+    : `🏈 NFL Keep or Cut\n\nPool: ${poolLabel} · Keeping ${config.keepCount} of ${config.totalPlayers}\n\n✅ Kept: ${p1.kept.map(p => p.name).join(", ")}\n❌ Cut: ${p1.cut.map(p => p.name).join(", ")}\n\n${debateQuestion}\n\n🎮 Think you can do better? keeporcut.vercel.app`;
+  
   const ResultPanel = ({ result, label }) => (
     <div style={{ flex: 1, minWidth: "0" }}>
       {label && <div style={{ color: "#4a90d9", fontSize: "12px", fontWeight: 800, letterSpacing: "1px", marginBottom: "10px" }}>{label}</div>}
