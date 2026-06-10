@@ -84,7 +84,7 @@ function clearURLParams() {
 }
 
 // ── NFL Player Database — loaded from Google Sheet ───────────────────────────
-const SHEET_API_URL = "https://script.google.com/macros/library/d/1Ko1hW1e9q7n2Zc-oDCaDoSxjWtFFQ2FIwhX6v8SztMOtONHKjC3vDxej/5";
+const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzNQBvJxbUN2NMjC2VvJzCFSE4tevFxrImtWdzf7Pq8XTDEByp-nxOvDnUOgVatO2qS/exec";
 
 // Convert flat sheet rows into pool-keyed object
 function buildPlayerPools(rows) {
