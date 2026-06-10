@@ -1,6 +1,26 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
+
+// Seeded random — same seed always gives same shuffle
+function seededRandom(seed) {
+  let s = seed;
+  return function() {
+    s = (s * 1664525 + 1013904223) & 0xffffffff;
+    return (s >>> 0) / 0xffffffff;
+  };
+}
+
+function seededShuffle(arr, seed) {
+  const a = [...arr];
+  const rand = seededRandom(seed);
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 function shuffle(arr) {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {
@@ -10,7 +30,7 @@ function shuffle(arr) {
   return a;
 }
 
-// URL-safe base64: no +, /, or = — survives SMS/iMessage without breaking
+// URL-safe base64 for p1 results only
 function toUrlSafeB64(str) {
   return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
@@ -18,19 +38,40 @@ function fromUrlSafeB64(str) {
   const padded = str + "=".repeat((4 - str.length % 4) % 4);
   return atob(padded.replace(/-/g, "+").replace(/_/g, "/"));
 }
-function encodeGame(players, config) {
-  return toUrlSafeB64(encodeURIComponent(JSON.stringify({ players, config })));
+
+// Game is encoded as: SEED-POOLID-TOTAL-KEEP (short, readable)
+function encodeGame(seed, config) {
+  const poolShort = config.poolId.replace("franchise_", "f_").replace("current_", "c_").replace("all_time_", "at_");
+  return `${seed}-${poolShort}-${config.totalPlayers}-${config.keepCount}-${config.allowInfo ? 1 : 0}`;
 }
 function decodeGame(str) {
-  try { return JSON.parse(decodeURIComponent(fromUrlSafeB64(str))); } catch { return null; }
+  try {
+    const parts = str.split("-");
+    if (parts.length < 5) return null;
+    const seed = parseInt(parts[0]);
+    const allowInfo = parts[parts.length - 1] === "1";
+    const keepCount = parseInt(parts[parts.length - 2]);
+    const totalPlayers = parseInt(parts[parts.length - 3]);
+    const poolShort = parts.slice(1, parts.length - 3).join("-");
+    const poolId = poolShort.replace("f_", "franchise_").replace("c_", "current_").replace("at_", "all_time_");
+    return { seed, config: { poolId, totalPlayers, keepCount, allowInfo, mode: "challenge" } };
+  } catch { return null; }
 }
-function encodeResult(kept, cut) {
-  return toUrlSafeB64(encodeURIComponent(JSON.stringify({ kept, cut })));
+
+// P1 result encoded as indices into the pool array
+function encodeResult(kept, cut, allPlayers) {
+  const keptIdx = kept.map(p => allPlayers.findIndex(a => a.name === p.name));
+  const cutIdx = cut.map(p => allPlayers.findIndex(a => a.name === p.name));
+  return toUrlSafeB64(JSON.stringify({ k: keptIdx, c: cutIdx }));
 }
-function decodeResult(str) {
-  try { return JSON.parse(decodeURIComponent(fromUrlSafeB64(str))); } catch { return null; }
+function decodeResult(str, allPlayers) {
+  try {
+    const { k, c } = JSON.parse(fromUrlSafeB64(str));
+    return { kept: k.map(i => allPlayers[i]), cut: c.map(i => allPlayers[i]) };
+  } catch { return null; }
 }
-// Path-based URL: /c/GAMECODE.P1CODE — no = signs at all, survives iMessage
+
+// Short clean URL: /c/SEED-POOL-N-K-INFO.P1RESULT
 function buildChallengeURL(gameCode, p1Code) {
   return `${window.location.origin}/c/${gameCode}.${p1Code}`;
 }
@@ -780,8 +821,8 @@ function ChallengeLinkScreen({ config, players, p1Result, onHome }) {
   const [copied, setCopied] = useState(false);
   const [textCopied, setTextCopied] = useState(false);
 
-  const gameCode = useMemo(() => encodeGame(players, config), [players, config]);
-  const p1Code = useMemo(() => encodeResult(p1Result.kept, p1Result.cut), [p1Result]);
+  const gameCode = useMemo(() => encodeGame(config.seed, config), [config]);
+  const p1Code = useMemo(() => encodeResult(p1Result.kept, p1Result.cut, players), [p1Result, players]);
   const challengeURL = buildChallengeURL(gameCode, p1Code);
 
   const smsBody = `🏈 NFL Keep or Cut — I drafted my squad, now it's your turn!\n\nSame pool of players, keep ${config.keepCount} of ${config.totalPlayers}. Who do YOU keep?\n\n${challengeURL}`;
@@ -955,20 +996,26 @@ export default function App() {
     const { game, p1result } = getURLParams();
     if (game && p1result) {
       const gameData = decodeGame(game);
-      const p1 = decodeResult(p1result);
-      if (gameData && p1) {
-        setChallengeData({ gameData, p1Result: p1 });
-        setScreen("challenge-received");
-        return;
+      if (gameData) {
+        const pool = NFL_PLAYERS[gameData.config.poolId] || NFL_PLAYERS.all_time_greats;
+        const allPlayers = seededShuffle(pool, gameData.seed).slice(0, gameData.config.totalPlayers);
+        const p1 = decodeResult(p1result, allPlayers);
+        if (p1) {
+          setChallengeData({ gameData, p1Result: p1, allPlayers });
+          setScreen("challenge-received");
+          return;
+        }
       }
     }
     setScreen("setup");
   }, []);
 
   const handleStart = (cfg) => {
-    setConfig(cfg);
+    const seed = cfg.seed || (Math.random() * 0xffffffff | 0);
+    const cfgWithSeed = { ...cfg, seed };
+    setConfig(cfgWithSeed);
     const pool = NFL_PLAYERS[cfg.poolId] || NFL_PLAYERS.all_time_greats;
-    const selected = shuffle(pool).slice(0, cfg.totalPlayers);
+    const selected = seededShuffle(pool, seed).slice(0, cfg.totalPlayers);
     setGamePlayers(selected);
     setP1Result(null);
     clearURLParams();
@@ -985,8 +1032,9 @@ export default function App() {
   };
 
   const handleChallengeAccepted = () => {
-    setConfig(challengeData.gameData.config);
-    setGamePlayers(challengeData.gameData.players);
+    const { gameData, allPlayers } = challengeData;
+    setConfig({ ...gameData.config, seed: gameData.seed });
+    setGamePlayers(allPlayers);
     setScreen("game-p2");
   };
 
