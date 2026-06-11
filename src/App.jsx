@@ -104,7 +104,10 @@ function buildPlayerPools(rows) {
     };
     if (row.age && String(row.age).trim() !== "") player.age = parseInt(row.age);
     if (row.peak && String(row.peak).trim() !== "") player.peak = String(row.peak);
-    if (row.stats && String(row.stats).trim() !== "") player.stats = String(row.stats);
+if (row.stats && String(row.stats).trim() !== "") player.stats = String(row.stats);
+
+    // Add to specific pools from pool column
+    const poolIds = String(row.pool).split(",").map(p => p.trim()).filter(Boolean);
 
     // Add to all_players automatically unless it's a season entry
     const isSeasonEntry = poolIds.some(pid => pid.startsWith("iconic_"));
@@ -113,8 +116,6 @@ function buildPlayerPools(rows) {
       pools["all_players"].push(player);
     }
 
-    // Add to specific pools from pool column
-    const poolIds = String(row.pool).split(",").map(p => p.trim()).filter(Boolean);
     poolIds.forEach(pid => {
       if (pid === "all_players") return;
       if (!pools[pid]) pools[pid] = [];
@@ -151,10 +152,16 @@ const POOL_GROUPS = [
     options: [
       { id: "all_players", label: "All Players", desc: "Everybody in the club" },
       { id: "hof_only", label: "Hall of Famers", desc: "Only the immortals" },
-      { id: "pretty_okay", label: "Remember that WR?", desc: "For guyknowballogists" },
-      { id: "fan_favorites", label: "Fan Favorites", desc: "Beloved & controversial players" },
       { id: "modern_nfl", label: "Modern NFL", desc: "Players who played into the 2000's - Now" },
       { id: "next_gen", label: "Next Gen", desc: "They got next." },
+    ]
+  },
+    {
+    label: "😤 Instant Arguments",
+    options: [
+      { id: "pretty_okay", label: "Remember that WR?", desc: "For guyknowballogists" },
+      { id: "fan_favorites", label: "Fan Favorites", desc: "Beloved & controversial players" },
+      { id: "iconic_wr", label: "Iconic WR Seasons", desc: "'87 Rice vs '21 Kupp vs '07 Moss" },
     ]
   },
   {
@@ -163,8 +170,6 @@ const POOL_GROUPS = [
       { id: "qbs_only", label: "QBs Only", desc: "Quarterbacks across history" },
       { id: "rbs_only", label: "RBs Only", desc: "Running backs across history" },
       { id: "wrs_only", label: "WRs Only", desc: "Wide receivers across history" },
-      { id: "tes_only", label: "TEs Only", desc: "Tight ends across history" },
-      { id: "linemen_only", label: "The Trenches", desc: "Best of the Big Uglies" },
       { id: "offense_only", label: "All Offense", desc: "All offensive skill positions" },
       { id: "defense_only", label: "All Defense", desc: "All defensive positions" },
     ]
@@ -578,7 +583,7 @@ function GameScreen({ config, playerNum = 1, players, onComplete }) {
 }
 
 // ── Challenge Link Screen ─────────────────────────────────────────────────────
-function ChallengeLinkScreen({ config, players, p1Result, onHome }) {
+function ChallengeLinkScreen({ config, players, p1Result, onHome, onPlayAgain }) {
   const [copied, setCopied] = useState(false);
   const [textCopied, setTextCopied] = useState(false);
 
@@ -641,8 +646,10 @@ function ChallengeLinkScreen({ config, players, p1Result, onHome }) {
         <div style={{ color: "#555", fontSize: "11px", wordBreak: "break-all", lineHeight: 1.5 }}>{challengeURL.slice(0, 80)}...</div>
       </div>
 
-      <button onClick={onHome} style={{ width: "100%", background: "#1a1a2e", border: "1px solid #2d2d4a", color: "#888", borderRadius: "10px", padding: "14px", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}>🏠 Back to Home</button>
-    </div>
+      <div style={{ display: "flex", gap: "10px" }}>
+  <button onClick={() => onPlayAgain()} style={{ flex: 1, background: "linear-gradient(135deg, #c53030, #e53e3e)", color: "#fff", border: "none", borderRadius: "10px", padding: "14px", fontWeight: 800, fontSize: "15px", cursor: "pointer" }}>🔄 Run It Back</button>
+  <button onClick={onHome} style={{ background: "#1a1a2e", border: "1px solid #2d2d4a", color: "#888", borderRadius: "10px", padding: "14px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}>🏠 Home</button>
+</div>
   );
 }
 
@@ -884,7 +891,7 @@ const handleChallengeAccepted = () => {
       )}
 
       {screen === "challenge-link" && (
-        <ChallengeLinkScreen config={config} players={gamePlayers} p1Result={p1Result} onHome={goHome} />
+        <ChallengeLinkScreen config={config} players={gamePlayers} p1Result={p1Result} onHome={goHome} onPlayAgain={() => handleStart({ ...config, seed: null })} />
       )}
 
       {screen === "challenge-received" && challengeData && (
