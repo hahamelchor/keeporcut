@@ -18,8 +18,8 @@ export default async function handler(req, res) {
       body: typeof req.body === 'string' ? req.body : JSON.stringify(req.body),
     });
 
-    const text = await response.text();
-    res.status(response.status).send(text);
+    const data = await response.json();
+    res.status(response.status).json(data);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
