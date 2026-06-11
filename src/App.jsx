@@ -84,7 +84,7 @@ function clearURLParams() {
 }
 
 // ── NFL Player Database — loaded from Google Sheet ───────────────────────────
-const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzNQBvJxbUN2NMjC2VvJzCFSE4tevFxrImtWdzf7Pq8XTDEByp-nxOvDnUOgVatO2qS/exec";
+const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbyRBpBdl-pd_jyaI0zbM4LJ1Hln9pRQicNIAQ6-LXOjX-wPgxjZrfK6uADBHy_uEzEi/exec";
 
 // Convert flat sheet rows into pool-keyed object
 function buildPlayerPools(rows) {
@@ -149,9 +149,9 @@ const POOL_GROUPS = [
     options: [
       { id: "all_players", label: "All Players", desc: "Everybody in the club" },
       { id: "hof_only", label: "Hall of Famers", desc: "Only the immortals" },
-      { id: "current_stars", label: "Current Stars", desc: "Today's best players" },
+      { id: "pretty_okay", label: "Remember that WR?", desc: "For guyknowballogists" },
       { id: "fan_favorites", label: "Fan Favorites", desc: "Beloved & controversial players" },
-      { id: "current_over_30", label: "Wily Old Vets", desc: "What was the NFL like before COVID, grandpa?" },
+      { id: "modern_nfl", label: "Modern NFL", desc: "Players who played into the 2000's - Now" },
       { id: "next_gen", label: "Next Gen", desc: "They got next." },
     ]
   },
@@ -168,40 +168,40 @@ const POOL_GROUPS = [
     ]
   },
   {
-    label: "🏟️ Franchise All-Time Greats",
+label: "🏟️ By Franchise",
     options: [
-      { id: "franchise_cowboys", label: "Dallas Cowboys", desc: "haven't won a SB since before Basti was born" },
-      { id: "franchise_patriots", label: "New England Patriots", desc: "Dynasty era & legends" },
-      { id: "franchise_49ers", label: "San Francisco 49ers", desc: "The dynasty & beyond" },
-      { id: "franchise_steelers", label: "Pittsburgh Steelers", desc: "Steel Curtain era & more" },
-      { id: "franchise_packers", label: "Green Bay Packers", desc: "Titletown legends" },
-      { id: "franchise_chiefs", label: "Kansas City Chiefs", desc: "From Len Dawson to Mahomes" },
-      { id: "franchise_eagles", label: "Philadelphia Eagles", desc: "Essentially the best to ever do it" },
-      { id: "franchise_ravens", label: "Baltimore Ravens", desc: "Ray Lewis & beyond" },
-      { id: "franchise_seahawks", label: "Seattle Seahawks", desc: "LOB era & franchise icons" },
-      { id: "franchise_bears", label: "Chicago Bears", desc: "Monsters of the Midway" },
-      { id: "franchise_broncos", label: "Denver Broncos", desc: "Elway, Manning & more" },
-      { id: "franchise_giants", label: "New York Giants", desc: "LT, Eli & franchise greats" },
-      { id: "franchise_raiders", label: "Las Vegas Raiders", desc: "Silver and Black legends" },
-      { id: "franchise_colts", label: "Indianapolis Colts", desc: "Manning era & beyond" },
-      { id: "franchise_chargers", label: "Los Angeles Chargers", desc: "LT, Rivers & more" },
-      { id: "franchise_titans", label: "Tennessee Titans", desc: "McNair, George & beyond" },
-      { id: "franchise_browns", label: "Cleveland Browns", desc: "Dawg Pound legends" },
-      { id: "franchise_texans", label: "Houston Texans", desc: "JJ Watt era & more" },
-      { id: "franchise_jaguars", label: "Jacksonville Jaguars", desc: "Brunell era & beyond" },
-      { id: "franchise_bills", label: "Buffalo Bills", desc: "Kelly era to present" },
-      { id: "franchise_jets", label: "New York Jets", desc: "Broadway Joe to Revis" },
-      { id: "franchise_washington", label: "Washington Commanders", desc: "Portis, Taylor & more" },
-      { id: "franchise_buccaneers", label: "Tampa Bay Buccaneers", desc: "Super Bowl eras" },
       { id: "franchise_cardinals", label: "Arizona Cardinals", desc: "Warner, Fitz & more" },
-      { id: "franchise_rams", label: "Los Angeles Rams", desc: "Greatest Show on Turf & beyond" },
-      { id: "franchise_lions", label: "Detroit Lions", desc: "Calvin, Barry & more" },
-      { id: "franchise_vikings", label: "Minnesota Vikings", desc: "Purple People Eaters to present" },
-      { id: "franchise_saints", label: "New Orleans Saints", desc: "Brees era & beyond" },
       { id: "franchise_falcons", label: "Atlanta Falcons", desc: "Vick, Ryan & more" },
+      { id: "franchise_ravens", label: "Baltimore Ravens", desc: "Ray Lewis & beyond" },
+      { id: "franchise_bills", label: "Buffalo Bills", desc: "Kelly era to present" },
       { id: "franchise_panthers", label: "Carolina Panthers", desc: "Cam, Kuechly & more" },
+      { id: "franchise_bears", label: "Chicago Bears", desc: "Monsters of the Midway" },
+      { id: "franchise_bengals", label: "Cincinnati Bengals", desc: "Joe, Jamarr & more" },
+      { id: "franchise_browns", label: "Cleveland Browns", desc: "Dawg Pound legends" },
+      { id: "franchise_cowboys", label: "Dallas Cowboys", desc: "'wE dEM bOyS' 'It'S oUr yEAr'" },
+      { id: "franchise_broncos", label: "Denver Broncos", desc: "Elway, Manning & more" },
+      { id: "franchise_lions", label: "Detroit Lions", desc: "Calvin, Barry & more" },
+      { id: "franchise_packers", label: "Green Bay Packers", desc: "Titletown legends" },
+      { id: "franchise_texans", label: "Houston Texans", desc: "JJ Watt era & more" },
+      { id: "franchise_colts", label: "Indianapolis Colts", desc: "Manning era & beyond" },
+      { id: "franchise_jaguars", label: "Jacksonville Jaguars", desc: "Brunell era & beyond" },
+      { id: "franchise_chiefs", label: "Kansas City Chiefs", desc: "From Len Dawson to Mahomes" },
+      { id: "franchise_raiders", label: "Las Vegas Raiders", desc: "Silver and Black legends" },
+      { id: "franchise_chargers", label: "Los Angeles Chargers", desc: "LT, Rivers & more" },
+      { id: "franchise_rams", label: "Los Angeles Rams", desc: "Greatest Show on Turf & beyond" },
       { id: "franchise_dolphins", label: "Miami Dolphins", desc: "Marino & Company" },
-      { id: "franchise_bengals", label: "Cincinatti Bengals", desc: "Joe, Jamarr & more" },
+      { id: "franchise_vikings", label: "Minnesota Vikings", desc: "Purple People Eaters to present" },
+      { id: "franchise_patriots", label: "New England Patriots", desc: "Dynasty era & legends" },
+      { id: "franchise_saints", label: "New Orleans Saints", desc: "Brees era & beyond" },
+      { id: "franchise_giants", label: "New York Giants", desc: "LT, Eli & franchise greats" },
+      { id: "franchise_jets", label: "New York Jets", desc: "Broadway Joe to Revis" },
+      { id: "franchise_eagles", label: "Philadelphia Eagles", desc: "GOATS from top to bottom" },
+      { id: "franchise_steelers", label: "Pittsburgh Steelers", desc: "Steel Curtain era & more" },
+      { id: "franchise_49ers", label: "San Francisco 49ers", desc: "The dynasty & beyond" },
+      { id: "franchise_seahawks", label: "Seattle Seahawks", desc: "LOB era & franchise icons" },
+      { id: "franchise_buccaneers", label: "Tampa Bay Buccaneers", desc: "Super Bowl eras" },
+      { id: "franchise_titans", label: "Tennessee Titans", desc: "McNair, George & beyond" },
+      { id: "franchise_washington", label: "Washington Commanders", desc: "Portis, Taylor & more" },
     ]
   }
 ];
@@ -223,7 +223,7 @@ function PlayerInfoModal({ player, onClose }) {
   useEffect(() => {
     async function fetchInfo() {
       try {
-        const res = await fetch("https://api.anthropic.com/v1/messages", {
+        const res = await fetch("/api/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -347,7 +347,7 @@ function PlayerCard({ player, onKeep, onCut, showInfo, decision = null, compact 
 
 // ── Setup Screen ──────────────────────────────────────────────────────────────
 function SetupScreen({ onStart }) {
-  const [mode, setMode] = useState(null);
+  const [mode, setMode] = useState("challenge");
   const [poolId, setPoolId] = useState("all_players");
   const [totalPlayers, setTotalPlayers] = useState(8);
   const [keepCount, setKeepCount] = useState(3);
@@ -579,7 +579,7 @@ function ChallengeLinkScreen({ config, players, p1Result, onHome }) {
   const p1Code = useMemo(() => encodeResult(p1Result.kept, p1Result.cut, players), [p1Result, players]);
   const challengeURL = buildChallengeURL(gameCode, p1Code);
 
-  const smsBody = `🏈 NFL Keep or Cut — I drafted my squad, now it's your turn!\n\nSame pool of players, keep ${config.keepCount} of ${config.totalPlayers}. Who do YOU keep?\n\n${challengeURL}`;
+  const smsBody = `🏈 I just locked in my squad. Think you can top it? Same ${config.totalPlayers} players, keep ${config.keepCount}. Let's find out who actually knows ball. 👇\n\n${challengeURL}`;
 
   const poolLabel = ALL_POOL_OPTIONS.find(o => o.id === config.poolId)?.label || config.poolId;
 
@@ -646,10 +646,17 @@ function ResultsScreen({ results, config, onPlayAgain, onHome, isChallenge = fal
   const p2 = results[1];
   const poolLabel = ALL_POOL_OPTIONS.find(o => o.id === config.poolId)?.label || config.poolId;
 
-  const shareText = isChallenge && p2
-    ? `🏈 NFL Keep or Cut — Head-to-Head Results!\n\nPool: ${poolLabel} · Keep ${config.keepCount} of ${config.totalPlayers}\n\n👤 Player 1 kept: ${p1.kept.map(p => p.name).join(", ")}\n⚔️ Player 2 kept: ${p2.kept.map(p => p.name).join(", ")}\n\nWho had the better squad? 🔥`
-    : `🏈 NFL Keep or Cut\n\nPool: ${poolLabel} · Keeping ${config.keepCount} of ${config.totalPlayers}\n\n✅ Kept: ${p1.kept.map(p => p.name).join(", ")}\n❌ Cut: ${p1.cut.map(p => p.name).join(", ")}\n\nWho would YOU keep? 🔥`;
+  const debateQuestions = [
+    "🏆 One game, all else equal, which squad is winning?",
+    "✂️ Who was the most disrespectful cut on either roster?",
+    "🤦 Which keep was the biggest mistake?",
+  ];
+  const debateQuestion = debateQuestions[Math.floor(Math.random() * debateQuestions.length)];
 
+  const shareText = isChallenge && p2
+    ? `🏈 NFL Keep or Cut — Head-to-Head Results!\n\nPool: ${poolLabel} · Keep ${config.keepCount} of ${config.totalPlayers}\n\n👤 Player 1\n✅ Kept: ${p1.kept.map(p => p.name).join(", ")}\n❌ Cut: ${p1.cut.map(p => p.name).join(", ")}\n\n⚔️ Player 2\n✅ Kept: ${p2.kept.map(p => p.name).join(", ")}\n❌ Cut: ${p2.cut.map(p => p.name).join(", ")}\n\n${debateQuestion}\n\n🎮 Want to play? keeporcut.vercel.app`
+    : `🏈 NFL Keep or Cut\n\nPool: ${poolLabel} · Keeping ${config.keepCount} of ${config.totalPlayers}\n\n✅ Kept: ${p1.kept.map(p => p.name).join(", ")}\n❌ Cut: ${p1.cut.map(p => p.name).join(", ")}\n\n${debateQuestion}\n\n🎮 Think you can do better? keeporcut.vercel.app`;  
+ 
   const ResultPanel = ({ result, label }) => (
     <div style={{ flex: 1, minWidth: "0" }}>
       {label && <div style={{ color: "#4a90d9", fontSize: "12px", fontWeight: 800, letterSpacing: "1px", marginBottom: "10px" }}>{label}</div>}
@@ -697,7 +704,7 @@ function ResultsScreen({ results, config, onPlayAgain, onHome, isChallenge = fal
 
       <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
         <button onClick={onPlayAgain} style={{ flex: 1, background: "linear-gradient(135deg, #c53030, #e53e3e)", color: "#fff", border: "none", borderRadius: "10px", padding: "14px", fontWeight: 800, fontSize: "15px", cursor: "pointer" }}>🔄 Play Again</button>
-        <button onClick={onHome} style={{ background: "#1a1a2e", border: "1px solid #2d2d4a", color: "#888", borderRadius: "10px", padding: "14px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}>🏠 Home</button>
+        <button onClick={onHome} style={{ background: "#1a1a2e", border: "1px solid #2d2d4a", color: "#888", borderRadius: "10px", padding: "14px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}>🔀 Switch Player Pool</button>
       </div>
     </div>
   );
@@ -885,7 +892,7 @@ const handleChallengeAccepted = () => {
         <ResultsScreen
           results={[p1Result]}
           config={config}
-          onPlayAgain={() => handleStart(config)}
+          onPlayAgain={() => handleStart({ ...config, seed: null })}
           onHome={goHome}
           isChallenge={false}
         />
@@ -895,7 +902,7 @@ const handleChallengeAccepted = () => {
         <ResultsScreen
           results={[p1Result, config._p2Result]}
           config={config}
-          onPlayAgain={() => handleStart({ ...config, _p2Result: undefined })}
+          onPlayAgain={() => handleStart({ ...config, _p2Result: undefined, seed: null })}
           onHome={goHome}
           isChallenge={true}
         />
