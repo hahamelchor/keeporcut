@@ -150,6 +150,7 @@ const POOL_GROUPS = [
       { id: "all_players", label: "All Players", desc: "Everybody in the club" },
       { id: "hof_only", label: "Hall of Famers", desc: "Only the immortals" },
       { id: "current_stars", label: "Current Stars", desc: "Today's best players" },
+      { id: "pretty_okay", label: "Remember that WR?", desc: "For guyknowballogists" },
       { id: "fan_favorites", label: "Fan Favorites", desc: "Beloved & controversial players" },
       { id: "current_over_30", label: "Wily Old Vets", desc: "What was the NFL like before COVID, grandpa?" },
       { id: "next_gen", label: "Next Gen", desc: "They got next." },
