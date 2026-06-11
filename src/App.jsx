@@ -104,9 +104,11 @@ function buildPlayerPools(rows) {
     };
     if (row.age && String(row.age).trim() !== "") player.age = parseInt(row.age);
     if (row.peak && String(row.peak).trim() !== "") player.peak = String(row.peak);
+    if (row.stats && String(row.stats).trim() !== "") player.stats = String(row.stats);
 
-    // Add to all_players automatically
-    if (!allPlayersSeen.has(player.name)) {
+    // Add to all_players automatically unless it's a season entry
+    const isSeasonEntry = poolIds.some(pid => pid.startsWith("iconic_"));
+    if (!allPlayersSeen.has(player.name) && !isSeasonEntry) {
       allPlayersSeen.add(player.name);
       pools["all_players"].push(player);
     }
@@ -329,8 +331,13 @@ function PlayerCard({ player, onKeep, onCut, showInfo, decision = null, compact 
           </div>
         </div>
         <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-          {player.peak && <span style={{ background: "#2a2a4a", color: "#a0c4ff", fontSize: "11px", padding: "3px 8px", borderRadius: "4px" }}>Peak: {player.peak}</span>}
-          {player.age && <span style={{ background: "#2a2a4a", color: "#a0c4ff", fontSize: "11px", padding: "3px 8px", borderRadius: "4px" }}>Age: {player.age}</span>}
+            {player.stats
+              ? <span style={{ background: "#2a2a4a", color: "#a0c4ff", fontSize: "11px", padding: "3px 8px", borderRadius: "4px" }}>{player.stats}</span>
+              : <>
+                  {player.peak && <span style={{ background: "#2a2a4a", color: "#a0c4ff", fontSize: "11px", padding: "3px 8px", borderRadius: "4px" }}>Peak: {player.peak}</span>}
+                  {player.age && <span style={{ background: "#2a2a4a", color: "#a0c4ff", fontSize: "11px", padding: "3px 8px", borderRadius: "4px" }}>Age: {player.age}</span>}
+                </>
+          }
           <span style={{ background: "#2a2a4a", color: player.era === "active" ? "#68d391" : "#fc8181", fontSize: "11px", padding: "3px 8px", borderRadius: "4px" }}>
             {player.era === "active" ? "Active" : "Retired"}
           </span>
