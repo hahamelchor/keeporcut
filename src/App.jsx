@@ -1531,6 +1531,7 @@ const handleSelectMode = (mode) => {
   const seed = Math.floor(Math.random() * 2147483647) + 1;
   setRrSeed(seed);
   setRrRoster(null);
+  setRrChallengeData(null);
   setScreen("roster-royale-game");
 };
 
