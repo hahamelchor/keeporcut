@@ -632,6 +632,148 @@ function GameScreen({ config, playerNum = 1, players, onComplete }) {
   );
 }
 
+// ── Roster Royale Draft Engine ──────────────────────────────────────────────
+// Pure logic, no UI. Designed to be dropped into App.jsx once verified.
+
+// The 10 roster slots, in the order they appear on the roster grid/recap.
+// Order doesn't affect gameplay — it's just display order.
+const ROSTER_SLOTS = [
+  "qb", "rb", "wr1", "wr2", "wr3", "te", "oline", "def_base", "def_player", "coach"
+];
+
+const SLOT_LABELS = {
+  qb: "QB", rb: "RB", wr1: "WR1", wr2: "WR2", wr3: "WR3", te: "TE",
+  oline: "O-Line", def_base: "Defense", def_player: "Defensive Player", coach: "Coach",
+};
+
+// Each team row from the sheet has: team, qb, rb, wr1, wr2, wr3, te, oline,
+// def_base, def1, def2, def3, def4, def5, coach
+// This maps a team row into "what can this team offer for each of the 10 slots".
+// def_player is special — it returns an array of 5 options instead of one value.
+function getTeamOffers(teamRow) {
+  return {
+    qb: teamRow.qb,
+    rb: teamRow.rb,
+    wr1: teamRow.wr1,
+    wr2: teamRow.wr2,
+    wr3: teamRow.wr3,
+    te: teamRow.te,
+    oline: teamRow.oline,
+    def_base: teamRow.def_base,
+    def_player: [teamRow.def1, teamRow.def2, teamRow.def3, teamRow.def4, teamRow.def5].filter(Boolean),
+    coach: teamRow.coach,
+  };
+}
+
+// Creates a fresh draft state for a new game.
+// teams: array of team row objects from the "Draft Mode - Teams" sheet
+// seed: number, used to generate the round sequence (same seed = same sequence for challenges)
+function createDraftState(teams, seed) {
+  return {
+    teams,
+    seed,
+    round: 0, // 0-indexed, increments after each pick
+    roster: ROSTER_SLOTS.reduce((acc, slot) => ({ ...acc, [slot]: null }), {}),
+    // roster[slot] will hold { value: string, teamName: string } once filled
+    history: [], // log of { round, teamName, slotFilled, value } for recap/debug
+  };
+}
+
+// Seeded random, consistent with the rest of the app (same algorithm as keep/cut)
+function seededRandom(seed) {
+  let s = Math.abs(seed) >>> 0;
+  return function () {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+
+// Given a draft state, returns which slots are still open.
+function getOpenSlots(state) {
+  return ROSTER_SLOTS.filter((slot) => state.roster[slot] === null);
+}
+
+// Returns true if the draft is complete (all 10 slots filled).
+function isDraftComplete(state) {
+  return getOpenSlots(state).length === 0;
+}
+
+// Randomizes the next team for the current round.
+// Uses state.seed + state.round so the same seed produces the same sequence
+// of teams every time (critical for challenge mode — both players see the
+// same team sequence, just make different picks).
+function getNextTeam(state) {
+  const rand = seededRandom(state.seed + state.round * 7919); // prime offset avoids correlation between rounds
+  const index = Math.floor(rand() * state.teams.length);
+  return state.teams[index];
+}
+
+// Given the current state and a randomized team, returns the list of
+// choices the player can make this round — one entry per still-open slot
+// that this team can fill.
+// Each choice is { slot, label, value } except for def_player, which is
+// { slot, label, options: [...5 names] }.
+function getRoundChoices(state, team) {
+  const openSlots = getOpenSlots(state);
+  const offers = getTeamOffers(team);
+
+  return openSlots
+    .map((slot) => {
+      if (slot === "def_player") {
+        const options = offers.def_player;
+        if (!options || options.length === 0) return null;
+        return { slot, label: SLOT_LABELS[slot], options };
+      }
+      const value = offers[slot];
+      if (!value) return null;
+      return { slot, label: SLOT_LABELS[slot], value };
+    })
+    .filter(Boolean);
+}
+
+// Locks in a pick. Returns a NEW state (does not mutate the original —
+// keeps this easy to use with React state).
+// slot: the slot being filled (e.g. "wr2" or "def_player")
+// value: the name/string to lock in (for def_player, this is the chosen defender's name)
+// team: the team object this pick came from (for display/team-color purposes)
+function makePick(state, slot, value, team) {
+  if (state.roster[slot] !== null) {
+    throw new Error(`Slot "${slot}" is already filled.`);
+  }
+
+  const newRoster = {
+    ...state.roster,
+    [slot]: { value, teamName: team.team },
+  };
+
+  const newHistoryEntry = {
+    round: state.round,
+    teamName: team.team,
+    slotFilled: slot,
+    value,
+  };
+
+  return {
+    ...state,
+    roster: newRoster,
+    round: state.round + 1,
+    history: [...state.history, newHistoryEntry],
+  };
+}
+
+module.exports = {
+  ROSTER_SLOTS,
+  SLOT_LABELS,
+  getTeamOffers,
+  createDraftState,
+  seededRandom,
+  getOpenSlots,
+  isDraftComplete,
+  getNextTeam,
+  getRoundChoices,
+  makePick,
+};
+
 // ── Challenge Link Screen ─────────────────────────────────────────────────────
 function ChallengeLinkScreen({ config, players, p1Result, onHome, onPlayAgain }) {
   const [copied, setCopied] = useState(false);
