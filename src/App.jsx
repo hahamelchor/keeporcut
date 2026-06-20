@@ -65,6 +65,36 @@ function decodeResult(str, allPlayers) {
   } catch { return null; }
 }
 
+// Roster Royale: encode/decode a full 10-slot roster for challenge links
+function encodeRoster(roster) {
+  const compact = {};
+  RR_ROSTER_SLOTS.forEach((slot) => {
+    const pick = roster[slot];
+    compact[slot] = pick ? [pick.value, pick.teamName] : null;
+  });
+  return toUrlSafeB64(JSON.stringify(compact));
+}
+function decodeRoster(str) {
+  try {
+    const compact = JSON.parse(fromUrlSafeB64(str));
+    const roster = {};
+    RR_ROSTER_SLOTS.forEach((slot) => {
+      const entry = compact[slot];
+      roster[slot] = entry ? { value: entry[0], teamName: entry[1] } : null;
+    });
+    return roster;
+  } catch { return null; }
+}
+
+// Roster Royale: encode/decode the game setup (seed) for challenge links
+function encodeRosterRoyaleGame(seed) {
+  return `${seed}`;
+}
+function decodeRosterRoyaleGame(str) {
+  const seed = parseInt(str);
+  return isNaN(seed) ? null : seed;
+}
+
 // Short clean URL: /c/SEED-POOL-N-K-INFO.P1RESULT
 function buildChallengeURL(gameCode, p1Code) {
   return `${window.location.origin}/c/${gameCode}.${p1Code}`;
@@ -1033,6 +1063,56 @@ function RosterRoyaleGameScreen({ teams, seed, playerNum = 1, onComplete }) {
             </button>
           );
         })}
+      </div>
+    </div>
+  );
+}
+
+function RosterRoyaleChallengeLinkScreen({ seed, roster, onHome, onPlayAgain }) {
+  const [copied, setCopied] = useState(false);
+  const [textCopied, setTextCopied] = useState(false);
+
+  const rosterCode = useMemo(() => encodeRoster(roster), [roster]);
+  const challengeURL = `${window.location.origin}/rr/${seed}~${rosterCode}`;
+
+  const smsBody = `🏆 I just drafted my Roster Royale squad. Think you can build a better one? Same 10 rounds, same random teams — let's see who actually knows ball. 👇\n\n${challengeURL}`;
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(challengeURL).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
+  };
+
+  const handleTextChallenge = () => {
+    navigator.clipboard.writeText(smsBody).then(() => { setTextCopied(true); setTimeout(() => setTextCopied(false), 2000); });
+    if (navigator.share) {
+      navigator.share({ title: "Roster Royale Challenge", text: smsBody }).catch(() => {});
+    }
+  };
+
+  return (
+    <div style={{ maxWidth: "480px", margin: "0 auto", padding: "24px 16px" }}>
+      <div style={{ textAlign: "center", marginBottom: "28px" }}>
+        <div style={{ fontSize: "48px", marginBottom: "12px" }}>🏆</div>
+        <h2 style={{ color: "#fff", fontWeight: 900, fontSize: "26px", margin: "0 0 8px 0" }}>Your Roster is Locked</h2>
+        <p style={{ color: "#888", fontSize: "14px", margin: 0 }}>Send the challenge link — your opponent drafts the same sequence of teams, then you both see the comparison.</p>
+      </div>
+
+      <div style={{ background: "#1a1a2e", border: "1px solid #2d2d4a", borderRadius: "12px", padding: "16px", marginBottom: "20px" }}>
+        <div style={{ color: "#888", fontSize: "11px", letterSpacing: "1px", marginBottom: "12px", textTransform: "uppercase" }}>Your Squad</div>
+        <RosterGrid roster={roster} compact />
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
+        <button onClick={handleTextChallenge} style={{ background: "linear-gradient(135deg, #1a5c3a, #2d9e5f)", color: "#fff", border: "none", borderRadius: "10px", padding: "16px", fontWeight: 800, fontSize: "16px", cursor: "pointer" }}>
+          {textCopied ? "✅ Copied! Paste in your text app" : "💬 Text the Challenge"}
+        </button>
+        <button onClick={handleCopyLink} style={{ background: "#1a1a2e", border: "1px solid #2d2d4a", color: "#a0c4ff", borderRadius: "10px", padding: "14px", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}>
+          {copied ? "✅ Link Copied!" : "🔗 Copy Challenge Link"}
+        </button>
+      </div>
+
+      <div style={{ display: "flex", gap: "10px" }}>
+        <button onClick={onPlayAgain} style={{ flex: 1, background: "linear-gradient(135deg, #c53030, #e53e3e)", color: "#fff", border: "none", borderRadius: "10px", padding: "14px", fontWeight: 800, fontSize: "15px", cursor: "pointer" }}>🔄 Run It Back</button>
+        <button onClick={onHome} style={{ background: "#1a1a2e", border: "1px solid #2d2d4a", color: "#888", borderRadius: "10px", padding: "14px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}>🏠 Home</button>
       </div>
     </div>
   );
