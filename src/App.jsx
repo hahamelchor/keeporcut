@@ -1172,6 +1172,7 @@ function RosterRoyaleComparisonRows({ p1Roster, p2Roster }) {
 function RosterRoyaleRecapScreen({ roster, onPlayAgain, onHome, isChallenge = false, p1Roster = null }) {
   const [copied, setCopied] = useState(false);
   const [challengeCopied, setChallengeCopied] = useState(false);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const formatRoster = (r) => RR_ROSTER_SLOTS.map((slot) => `${RR_SLOT_LABELS[slot]}: ${r[slot]?.value || "—"}`).join("\n");
 
@@ -1179,11 +1180,10 @@ function RosterRoyaleRecapScreen({ roster, onPlayAgain, onHome, isChallenge = fa
     ? `🏆 Roster Royale — Head-to-Head Results!\n\n👤 Player 1\n${formatRoster(p1Roster)}\n\n⚔️ Player 2\n${formatRoster(roster)}\n\n🎮 Want to play? keeporcut.vercel.app`
     : `🏆 Roster Royale — My Squad\n\n${formatRoster(roster)}\n\n🎮 Think you can draft better? keeporcut.vercel.app`;
 
-  const handleChallengeFriend = () => {
-    const rosterCode = encodeRoster(roster);
-    const challengeURL = `${window.location.origin}/rr/${roster._seed}~${rosterCode}`;
-    const smsBody = `🏆 I just drafted my Roster Royale squad. Think you can build a better one? Same 10 rounds, same random teams — let's see who actually knows ball. 👇\n\n${challengeURL}`;
+  const challengeURL = `${window.location.origin}/rr/${roster._seed}~${encodeRoster(roster)}`;
+  const smsBody = `🏆 I just drafted my Roster Royale squad. Think you can build a better one? Same 10 rounds, same random teams — let's see who actually knows ball. 👇\n\n${challengeURL}`;
 
+  const handleChallengeFriend = () => {
     if (navigator.share) {
       navigator.share({ title: "Roster Royale Challenge", text: smsBody }).catch(() => {});
     } else {
@@ -1191,6 +1191,59 @@ function RosterRoyaleRecapScreen({ roster, onPlayAgain, onHome, isChallenge = fa
     }
   };
 
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(challengeURL).then(() => { setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000); });
+  };
+
+  return (
+    <div style={{ maxWidth: "600px", margin: "0 auto", padding: "24px 16px" }}>
+      <div style={{ textAlign: "center", marginBottom: "28px" }}>
+        <div style={{ fontSize: "13px", letterSpacing: "3px", color: "#e53e3e", fontWeight: 800, marginBottom: "6px" }}>FINAL ROSTER</div>
+        <h2 style={{ color: "#fff", fontWeight: 900, fontSize: "28px", margin: 0 }}>
+          {isChallenge && p1Roster ? "⚔️ Head-to-Head Results" : "🏆 Your Squad"}
+        </h2>
+      </div>
+
+      {isChallenge && p1Roster ? (
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: "#4a90d9" }}>👤 Player 1</div>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: "#e53e3e" }}>⚔️ Challenger</div>
+          </div>
+          <RosterRoyaleComparisonRows p1Roster={p1Roster} p2Roster={roster} />
+        </>
+      ) : (
+        <RosterGrid roster={roster} compact={false} />
+      )}
+
+      {!isChallenge && (
+        <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "20px" }}>
+          <button onClick={handleChallengeFriend} style={{ width: "100%", background: "linear-gradient(135deg, #1a5c3a, #2d9e5f)", color: "#fff", border: "none", borderRadius: "10px", padding: "16px", fontWeight: 800, fontSize: "16px", cursor: "pointer" }}>
+            {challengeCopied ? "✅ Copied! Paste in your text app" : "📲 Challenge a Friend"}
+          </button>
+          <button onClick={handleCopyLink} style={{ width: "100%", background: "#1a1a2e", border: "1px solid #2d2d4a", color: "#a0c4ff", borderRadius: "10px", padding: "14px", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}>
+            {linkCopied ? "✅ Link Copied!" : "🔗 Copy Challenge Link"}
+          </button>
+        </div>
+      )}
+
+      {isChallenge && (
+        <div style={{ marginTop: "28px", background: "#1a1a2e", border: "1px solid #2d2d4a", borderRadius: "10px", padding: "16px" }}>
+          <div style={{ color: "#888", fontSize: "11px", letterSpacing: "1px", marginBottom: "10px", textTransform: "uppercase" }}>Share & Spark Debate</div>
+          <pre style={{ color: "#ccc", fontSize: "12px", lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word", margin: "0 0 12px 0" }}>{shareText}</pre>
+          <button onClick={() => { navigator.clipboard.writeText(shareText).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }); }} style={{ background: copied ? "#38a169" : "#2d2d4a", color: "#fff", border: "none", borderRadius: "8px", padding: "10px 20px", fontWeight: 700, cursor: "pointer", fontSize: "13px" }}>
+            {copied ? "✅ Copied!" : "📋 Copy to Share"}
+          </button>
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+        <button onClick={onPlayAgain} style={{ flex: 1, background: "linear-gradient(135deg, #c53030, #e53e3e)", color: "#fff", border: "none", borderRadius: "10px", padding: "14px", fontWeight: 800, fontSize: "15px", cursor: "pointer" }}>🔄 Draft Again</button>
+        <button onClick={onHome} style={{ background: "#1a1a2e", border: "1px solid #2d2d4a", color: "#888", borderRadius: "10px", padding: "14px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}>🔀 All Games</button>
+      </div>
+    </div>
+  );
+}
   return (
     <div style={{ maxWidth: "600px", margin: "0 auto", padding: "24px 16px" }}>
       <div style={{ textAlign: "center", marginBottom: "28px" }}>
