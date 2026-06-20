@@ -105,12 +105,14 @@ function getURLParams() {
   if (path.startsWith("/c/")) {
     const token = path.slice(3);
     const dot = token.indexOf(".");
-    if (dot > 0) return { game: token.slice(0, dot), p1result: token.slice(dot + 1) };
+    if (dot > 0) return { mode: "keep-or-cut", game: token.slice(0, dot), p1result: token.slice(dot + 1) };
+  }
+  if (path.startsWith("/rr/")) {
+    const token = path.slice(4);
+    const tilde = token.indexOf("~");
+    if (tilde > 0) return { mode: "roster-royale", rrSeed: token.slice(0, tilde), rrP1Roster: token.slice(tilde + 1) };
   }
   return {};
-}
-function clearURLParams() {
-  window.history.replaceState({}, "", "/");
 }
 
 // ── NFL Player Database — loaded from Google Sheet ───────────────────────────
