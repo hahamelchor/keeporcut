@@ -109,8 +109,8 @@ function getURLParams() {
   }
   if (path.startsWith("/rr/")) {
     const token = path.slice(4);
-    const tilde = token.indexOf("~");
-    if (tilde > 0) return { mode: "roster-royale", rrSeed: token.slice(0, tilde), rrP1Roster: token.slice(tilde + 1) };
+    const dot = token.indexOf(".");
+    if (dot > 0) return { mode: "roster-royale", rrSeed: token.slice(0, dot), rrP1Roster: token.slice(dot + 1) };
   }
   return {};
 }
@@ -1135,7 +1135,7 @@ function RosterRoyaleChallengeLinkScreen({ seed, roster, onHome, onPlayAgain }) 
   const [textCopied, setTextCopied] = useState(false);
 
   const rosterCode = useMemo(() => encodeRoster(roster), [roster]);
-  const challengeURL = `${window.location.origin}/rr/${seed}~${rosterCode}`;
+  const challengeURL = `${window.location.origin}/rr/${roster._seed}.${encodeRoster(roster)}`;
 
   const smsBody = `🏆 I just drafted my Roster Royale squad. Think you can build a better one? We'll get the same random teams, in the same order, but the order we choose to fill out our rosters in is up to your own GM skills — let's see who actually knows ball. 👇\n\n${challengeURL}`;
 
