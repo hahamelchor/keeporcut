@@ -1534,6 +1534,19 @@ const handleSelectMode = (mode) => {
   setScreen("roster-royale-game");
 };
 
+  const handleChallengeFriendRosterRoyale = () => {
+  const seed = Math.floor(Math.random() * 2147483647) + 1;
+  setRrSeed(seed);
+  setRrRoster(null);
+  setRrIsChallengeSender(true);
+  setScreen("roster-royale-game");
+};
+
+const handleRosterRoyaleChallengeAccepted = () => {
+  setRrRoster(null);
+  setScreen("roster-royale-game");
+};
+
 const handleRosterRoyaleComplete = (finalRoster) => {
   setRrRoster(finalRoster);
   if (rrChallengeData) {
@@ -1575,7 +1588,7 @@ const handleRosterRoyaleComplete = (finalRoster) => {
   <RosterRoyaleGameScreen
     teams={rrTeams}
     seed={rrSeed}
-    playerNum={1}
+    playerNum={rrChallengeData ? 2 : 1}
     onComplete={handleRosterRoyaleComplete}
   />
 )}
@@ -1583,6 +1596,30 @@ const handleRosterRoyaleComplete = (finalRoster) => {
 {screen === "roster-royale-recap" && rrRoster && (
   <RosterRoyaleRecapScreen
     roster={rrRoster}
+    onPlayAgain={handleStartRosterRoyale}
+    onHome={() => setScreen("mode-menu")}
+    onChallengeFriend={handleChallengeFriendRosterRoyale}
+  />
+)}
+
+{screen === "roster-royale-challenge-link" && (
+  <RosterRoyaleChallengeLinkScreen
+    seed={rrSeed}
+    roster={rrRoster}
+    onHome={() => setScreen("mode-menu")}
+    onPlayAgain={handleStartRosterRoyale}
+  />
+)}
+
+{screen === "roster-royale-challenge-received" && rrChallengeData && (
+  <RosterRoyaleChallengeReceivedScreen onStart={handleRosterRoyaleChallengeAccepted} />
+)}
+
+{screen === "roster-royale-recap-challenge" && rrRoster && rrChallengeData && (
+  <RosterRoyaleRecapScreen
+    roster={rrRoster}
+    p1Roster={rrChallengeData.p1Roster}
+    isChallenge={true}
     onPlayAgain={handleStartRosterRoyale}
     onHome={() => setScreen("mode-menu")}
   />
