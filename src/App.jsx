@@ -66,21 +66,46 @@ function decodeResult(str, allPlayers) {
 }
 
 // Roster Royale: encode/decode a full 10-slot roster for challenge links
-function encodeRoster(roster) {
-  const compact = {};
-  RR_ROSTER_SLOTS.forEach((slot) => {
+function encodeRoster(roster, teams) {
+  // Encode each slot as: teamIndex (into the teams array) for non-def_player slots,
+  // or teamIndex + defenderIndex (0-4) for def_player. Much shorter than full names.
+  const parts = RR_ROSTER_SLOTS.map((slot) => {
     const pick = roster[slot];
-    compact[slot] = pick ? [pick.value, pick.teamName] : null;
+    if (!pick) return "x";
+    const teamIndex = teams.findIndex((t) => t.team === pick.teamName);
+    if (teamIndex === -1) return "x";
+    if (slot === "def_player") {
+      const team = teams[teamIndex];
+      const defOptions = [team.def1, team.def2, team.def3, team.def4, team.def5].filter(Boolean);
+      const defIndex = defOptions.indexOf(pick.value);
+      return `${teamIndex}-${defIndex === -1 ? 0 : defIndex}`;
+    }
+    return `${teamIndex}`;
   });
-  return toUrlSafeB64(JSON.stringify(compact));
+  return parts.join("_");
 }
-function decodeRoster(str) {
+function decodeRoster(str, teams) {
   try {
-    const compact = JSON.parse(fromUrlSafeB64(str));
+    const parts = str.split("_");
+    if (parts.length !== RR_ROSTER_SLOTS.length) return null;
     const roster = {};
-    RR_ROSTER_SLOTS.forEach((slot) => {
-      const entry = compact[slot];
-      roster[slot] = entry ? { value: entry[0], teamName: entry[1] } : null;
+    RR_ROSTER_SLOTS.forEach((slot, i) => {
+      const part = parts[i];
+      if (part === "x") {
+        roster[slot] = null;
+        return;
+      }
+      if (slot === "def_player") {
+        const [teamIndexStr, defIndexStr] = part.split("-");
+        const team = teams[parseInt(teamIndexStr)];
+        const defOptions = [team.def1, team.def2, team.def3, team.def4, team.def5].filter(Boolean);
+        const value = defOptions[parseInt(defIndexStr)];
+        roster[slot] = { value, teamName: team.team };
+        return;
+      }
+      const team = teams[parseInt(part)];
+      const offers = rrGetTeamOffers(team);
+      roster[slot] = { value: offers[slot], teamName: team.team };
     });
     return roster;
   } catch { return null; }
