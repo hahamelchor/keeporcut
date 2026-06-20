@@ -1169,14 +1169,27 @@ function RosterRoyaleComparisonRows({ p1Roster, p2Roster }) {
   );
 }
 
-function RosterRoyaleRecapScreen({ roster, onPlayAgain, onHome, isChallenge = false, p1Roster = null, onChallengeFriend = null }) {
+function RosterRoyaleRecapScreen({ roster, onPlayAgain, onHome, isChallenge = false, p1Roster = null }) {
   const [copied, setCopied] = useState(false);
+  const [challengeCopied, setChallengeCopied] = useState(false);
 
   const formatRoster = (r) => RR_ROSTER_SLOTS.map((slot) => `${RR_SLOT_LABELS[slot]}: ${r[slot]?.value || "—"}`).join("\n");
 
   const shareText = isChallenge && p1Roster
     ? `🏆 Roster Royale — Head-to-Head Results!\n\n👤 Player 1\n${formatRoster(p1Roster)}\n\n⚔️ Player 2\n${formatRoster(roster)}\n\n🎮 Want to play? keeporcut.vercel.app`
     : `🏆 Roster Royale — My Squad\n\n${formatRoster(roster)}\n\n🎮 Think you can draft better? keeporcut.vercel.app`;
+
+  const handleChallengeFriend = () => {
+    const rosterCode = encodeRoster(roster);
+    const challengeURL = `${window.location.origin}/rr/${roster._seed}~${rosterCode}`;
+    const smsBody = `🏆 I just drafted my Roster Royale squad. Think you can build a better one? Same 10 rounds, same random teams — let's see who actually knows ball. 👇\n\n${challengeURL}`;
+
+    if (navigator.share) {
+      navigator.share({ title: "Roster Royale Challenge", text: smsBody }).catch(() => {});
+    } else {
+      navigator.clipboard.writeText(smsBody).then(() => { setChallengeCopied(true); setTimeout(() => setChallengeCopied(false), 2000); });
+    }
+  };
 
   return (
     <div style={{ maxWidth: "600px", margin: "0 auto", padding: "24px 16px" }}>
@@ -1199,7 +1212,13 @@ function RosterRoyaleRecapScreen({ roster, onPlayAgain, onHome, isChallenge = fa
         <RosterGrid roster={roster} compact={false} />
       )}
 
-      <div style={{ marginTop: "28px", background: "#1a1a2e", border: "1px solid #2d2d4a", borderRadius: "10px", padding: "16px" }}>
+      {!isChallenge && (
+        <button onClick={handleChallengeFriend} style={{ width: "100%", background: "linear-gradient(135deg, #1a5c3a, #2d9e5f)", color: "#fff", border: "none", borderRadius: "10px", padding: "16px", fontWeight: 800, fontSize: "16px", cursor: "pointer", marginTop: "20px" }}>
+          {challengeCopied ? "✅ Copied! Paste in your text app" : "📲 Challenge a Friend"}
+        </button>
+      )}
+
+      <div style={{ marginTop: "16px", background: "#1a1a2e", border: "1px solid #2d2d4a", borderRadius: "10px", padding: "16px" }}>
         <div style={{ color: "#888", fontSize: "11px", letterSpacing: "1px", marginBottom: "10px", textTransform: "uppercase" }}>Share & Spark Debate</div>
         <pre style={{ color: "#ccc", fontSize: "12px", lineHeight: 1.6, whiteSpace: "pre-wrap", wordBreak: "break-word", margin: "0 0 12px 0" }}>{shareText}</pre>
         <button onClick={() => { navigator.clipboard.writeText(shareText).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }); }} style={{ background: copied ? "#38a169" : "#2d2d4a", color: "#fff", border: "none", borderRadius: "8px", padding: "10px 20px", fontWeight: 700, cursor: "pointer", fontSize: "13px" }}>
@@ -1207,10 +1226,7 @@ function RosterRoyaleRecapScreen({ roster, onPlayAgain, onHome, isChallenge = fa
         </button>
       </div>
 
-      {!isChallenge && onChallengeFriend && (
-        <button onClick={onChallengeFriend} style={{ width: "100%", background: "linear-gradient(135deg, #1a5c3a, #2d9e5f)", color: "#fff", border: "none", borderRadius: "10px", padding: "14px", fontWeight: 800, fontSize: "15px", cursor: "pointer", marginTop: "16px" }}>📲 Challenge a Friend</button>
-      )}
-      <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+      <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
         <button onClick={onPlayAgain} style={{ flex: 1, background: "linear-gradient(135deg, #c53030, #e53e3e)", color: "#fff", border: "none", borderRadius: "10px", padding: "14px", fontWeight: 800, fontSize: "15px", cursor: "pointer" }}>🔄 Draft Again</button>
         <button onClick={onHome} style={{ background: "#1a1a2e", border: "1px solid #2d2d4a", color: "#888", borderRadius: "10px", padding: "14px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}>🔀 All Games</button>
       </div>
@@ -1573,14 +1589,9 @@ const handleRosterRoyaleChallengeAccepted = () => {
 };
 
 const handleRosterRoyaleComplete = (finalRoster) => {
-  setRrRoster(finalRoster);
-  if (rrChallengeData) {
-    setScreen("roster-royale-recap-challenge");
-  } else if (rrIsChallengeSender) {
-    setScreen("roster-royale-challenge-link");
-  } else {
-    setScreen("roster-royale-recap");
-  }
+  const rosterWithSeed = { ...finalRoster, _seed: rrSeed };
+  setRrRoster(rosterWithSeed);
+  setScreen(rrChallengeData ? "roster-royale-recap-challenge" : "roster-royale-recap");
 };
   
   const goHome = () => {
