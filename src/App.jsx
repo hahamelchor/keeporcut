@@ -1137,7 +1137,7 @@ function RosterRoyaleChallengeLinkScreen({ seed, roster, onHome, onPlayAgain }) 
   const rosterCode = useMemo(() => encodeRoster(roster), [roster]);
   const challengeURL = `${window.location.origin}/rr/${seed}~${rosterCode}`;
 
-  const smsBody = `🏆 I just drafted my Roster Royale squad. Think you can build a better one? Same 10 rounds, same random teams — let's see who actually knows ball. 👇\n\n${challengeURL}`;
+  const smsBody = `🏆 I just drafted my Roster Royale squad. Think you can build a better one? We'll get the same random teams, in the same order, but the order we choose to fill out our rosters in is up to your own GM skills — let's see who actually knows ball. 👇\n\n${challengeURL}`;
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(challengeURL).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
@@ -1219,7 +1219,7 @@ function RosterRoyaleRecapScreen({ roster, onPlayAgain, onHome, isChallenge = fa
   const formatRoster = (r) => RR_ROSTER_SLOTS.map((slot) => `${RR_SLOT_LABELS[slot]}: ${r[slot]?.value || "—"}`).join("\n");
 
   const shareText = isChallenge && p1Roster
-    ? `🏆 Roster Royale — Head-to-Head Results!\n\n👤 Player 1\n${formatRoster(p1Roster)}\n\n⚔️ Player 2\n${formatRoster(roster)}\n\n🎮 Want to play? keeporcut.vercel.app`
+    ? `🏆 Roster Royale — Head-to-Head Results! Which player built a better roster?\n\n👤 Player A\n${formatRoster(p1Roster)}\n\n⚔️ Player B\n${formatRoster(roster)}\n\n🎮 Think you can do better? keeporcut.vercel.app`
     : `🏆 Roster Royale — My Squad\n\n${formatRoster(roster)}\n\n🎮 Think you can draft better? keeporcut.vercel.app`;
 
   const challengeURL = `${window.location.origin}/rr/${roster._seed}~${encodeRoster(roster)}`;
