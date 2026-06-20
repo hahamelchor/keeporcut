@@ -1155,56 +1155,6 @@ function RosterRoyaleChallengeReceivedScreen({ onStart }) {
   );
 }
 
-function RosterRoyaleChallengeLinkScreen({ seed, roster, onHome, onPlayAgain }) {
-  const [copied, setCopied] = useState(false);
-  const [textCopied, setTextCopied] = useState(false);
-
-  const rosterCode = useMemo(() => encodeRoster(roster), [roster]);
-  const challengeURL = `${window.location.origin}/rr/${roster._seed}.${encodeRoster(roster)}`;
-
-  const smsBody = `🏆 I just drafted my Roster Royale squad. Think you can build a better one? We'll get the same random teams, in the same order, but the order we choose to fill out our rosters in is up to your own GM skills — let's see who actually knows ball. 👇\n\n${challengeURL}`;
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(challengeURL).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); });
-  };
-
-  const handleTextChallenge = () => {
-    navigator.clipboard.writeText(smsBody).then(() => { setTextCopied(true); setTimeout(() => setTextCopied(false), 2000); });
-    if (navigator.share) {
-      navigator.share({ title: "Roster Royale Challenge", text: smsBody }).catch(() => {});
-    }
-  };
-
-  return (
-    <div style={{ maxWidth: "480px", margin: "0 auto", padding: "24px 16px" }}>
-      <div style={{ textAlign: "center", marginBottom: "28px" }}>
-        <div style={{ fontSize: "48px", marginBottom: "12px" }}>🏆</div>
-        <h2 style={{ color: "#fff", fontWeight: 900, fontSize: "26px", margin: "0 0 8px 0" }}>Your Roster is Locked</h2>
-        <p style={{ color: "#888", fontSize: "14px", margin: 0 }}>Send the challenge link — your opponent drafts the same sequence of teams, then you both see the comparison.</p>
-      </div>
-
-      <div style={{ background: "#1a1a2e", border: "1px solid #2d2d4a", borderRadius: "12px", padding: "16px", marginBottom: "20px" }}>
-        <div style={{ color: "#888", fontSize: "11px", letterSpacing: "1px", marginBottom: "12px", textTransform: "uppercase" }}>Your Squad</div>
-        <RosterGrid roster={roster} compact />
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginBottom: "16px" }}>
-        <button onClick={handleTextChallenge} style={{ background: "linear-gradient(135deg, #1a5c3a, #2d9e5f)", color: "#fff", border: "none", borderRadius: "10px", padding: "16px", fontWeight: 800, fontSize: "16px", cursor: "pointer" }}>
-          {textCopied ? "✅ Copied! Paste in your text app" : "💬 Text the Challenge"}
-        </button>
-        <button onClick={handleCopyLink} style={{ background: "#1a1a2e", border: "1px solid #2d2d4a", color: "#a0c4ff", borderRadius: "10px", padding: "14px", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}>
-          {copied ? "✅ Link Copied!" : "🔗 Copy Challenge Link"}
-        </button>
-      </div>
-
-      <div style={{ display: "flex", gap: "10px" }}>
-        <button onClick={onPlayAgain} style={{ flex: 1, background: "linear-gradient(135deg, #c53030, #e53e3e)", color: "#fff", border: "none", borderRadius: "10px", padding: "14px", fontWeight: 800, fontSize: "15px", cursor: "pointer" }}>🔄 Run It Back</button>
-        <button onClick={onHome} style={{ background: "#1a1a2e", border: "1px solid #2d2d4a", color: "#888", borderRadius: "10px", padding: "14px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}>🏠 Home</button>
-      </div>
-    </div>
-  );
-}
-
 function RosterRoyaleComparisonRows({ p1Roster, p2Roster }) {
   const slotShortLabels = {
     qb: "QB", rb: "RB", wr1: "WR1", wr2: "WR2", wr3: "WR3", te: "TE",
@@ -1236,7 +1186,7 @@ function RosterRoyaleComparisonRows({ p1Roster, p2Roster }) {
   );
 }
 
-function RosterRoyaleRecapScreen({ roster, onPlayAgain, onHome, isChallenge = false, p1Roster = null }) {
+function RosterRoyaleRecapScreen({ roster, onPlayAgain, onHome, isChallenge = false, p1Roster = null, teams }) {
   const [copied, setCopied] = useState(false);
   const [challengeCopied, setChallengeCopied] = useState(false);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -1247,7 +1197,7 @@ function RosterRoyaleRecapScreen({ roster, onPlayAgain, onHome, isChallenge = fa
     ? `🏆 Roster Royale — Head-to-Head Results! Which player built a better roster?\n\n👤 Player A\n${formatRoster(p1Roster)}\n\n⚔️ Player B\n${formatRoster(roster)}\n\n🎮 Think you can do better? keeporcut.vercel.app`
     : `🏆 Roster Royale — My Squad\n\n${formatRoster(roster)}\n\n🎮 Think you can draft better? keeporcut.vercel.app`;
 
-  const challengeURL = `${window.location.origin}/rr/${roster._seed}.${encodeRoster(roster)}`;
+  const challengeURL = `${window.location.origin}/rr/${roster._seed}.${encodeRoster(roster, teams)}`;
   const smsBody = `🏆 I just drafted my Roster Royale squad. Think you can build a better one? Same 10 rounds, same random teams — let's see who actually knows ball. 👇\n\n${challengeURL}`;
 
   const handleChallengeFriend = () => {
@@ -1536,16 +1486,18 @@ export default function App() {
 
       if (params.mode === "roster-royale" && params.rrSeed && params.rrP1Roster) {
         const seed = parseInt(params.rrSeed);
-        const p1Roster = decodeRoster(params.rrP1Roster);
-        if (!isNaN(seed) && p1Roster) {
+        if (!isNaN(seed)) {
           try {
             const res = await fetch(DRAFT_MODE_API_URL);
             const rows = await res.json();
-            setRrTeams(rows);
-            setRrSeed(seed);
-            setRrChallengeData({ p1Roster });
-            setScreen("roster-royale-challenge-received");
-            return;
+            const p1Roster = decodeRoster(params.rrP1Roster, rows);
+            if (p1Roster) {
+              setRrTeams(rows);
+              setRrSeed(seed);
+              setRrChallengeData({ p1Roster });
+              setScreen("roster-royale-challenge-received");
+              return;
+            }
           } catch (e) {
             console.warn("Failed to load Draft Mode teams for challenge", e);
           }
@@ -1713,6 +1665,7 @@ const handleRosterRoyaleComplete = (finalRoster) => {
     onPlayAgain={handleStartRosterRoyale}
     onHome={() => setScreen("mode-menu")}
     onChallengeFriend={handleChallengeFriendRosterRoyale}
+    teams={rrTeams}
   />
 )}
 
@@ -1736,6 +1689,7 @@ const handleRosterRoyaleComplete = (finalRoster) => {
     isChallenge={true}
     onPlayAgain={handleStartRosterRoyale}
     onHome={() => setScreen("mode-menu")}
+    teams={rrTeams}
   />
 )}
 
