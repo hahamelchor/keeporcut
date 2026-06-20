@@ -1138,6 +1138,37 @@ function RosterRoyaleChallengeLinkScreen({ seed, roster, onHome, onPlayAgain }) 
   );
 }
 
+function RosterRoyaleComparisonRows({ p1Roster, p2Roster }) {
+  const slotShortLabels = {
+    qb: "QB", rb: "RB", wr1: "WR1", wr2: "WR2", wr3: "WR3", te: "TE",
+    oline: "OL", def_base: "DEF", def_player: "DEF+", coach: "HC",
+  };
+  const isUnit = (slot) => slot === "oline" || slot === "def_base";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "1px", background: "#2d2d4a", borderRadius: "10px", overflow: "hidden", border: "1px solid #2d2d4a" }}>
+      {RR_ROSTER_SLOTS.map((slot) => {
+        const p1Pick = p1Roster[slot];
+        const p2Pick = p2Roster[slot];
+        const fontSize = isUnit(slot) ? "12px" : "13px";
+        return (
+          <div key={slot} style={{ display: "grid", gridTemplateColumns: "1fr 50px 1fr", alignItems: "center", background: "#16213e" }}>
+            <div style={{ padding: "10px 10px", textAlign: "right", fontSize, color: p1Pick ? "#fff" : "#555" }}>
+              {p1Pick ? p1Pick.value : "—"}
+            </div>
+            <div style={{ padding: "8px 0", textAlign: "center", fontSize: "9px", fontWeight: 700, letterSpacing: "0.5px", color: "#888", background: "#1a1a2e" }}>
+              {slotShortLabels[slot]}
+            </div>
+            <div style={{ padding: "10px 10px", textAlign: "left", fontSize, color: p2Pick ? "#fff" : "#555" }}>
+              {p2Pick ? p2Pick.value : "—"}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function RosterRoyaleRecapScreen({ roster, onPlayAgain, onHome, isChallenge = false, p1Roster = null, onChallengeFriend = null }) {
   const [copied, setCopied] = useState(false);
 
@@ -1157,16 +1188,13 @@ function RosterRoyaleRecapScreen({ roster, onPlayAgain, onHome, isChallenge = fa
       </div>
 
       {isChallenge && p1Roster ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          <div>
-            <div style={{ color: "#4a90d9", fontSize: "12px", fontWeight: 800, letterSpacing: "1px", marginBottom: "10px" }}>👤 PLAYER 1</div>
-            <RosterGrid roster={p1Roster} compact={false} />
+        <>
+          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: "#4a90d9" }}>👤 Player 1</div>
+            <div style={{ fontSize: "12px", fontWeight: 700, color: "#e53e3e" }}>⚔️ Challenger</div>
           </div>
-          <div>
-            <div style={{ color: "#4a90d9", fontSize: "12px", fontWeight: 800, letterSpacing: "1px", marginBottom: "10px" }}>⚔️ CHALLENGER</div>
-            <RosterGrid roster={roster} compact={false} />
-          </div>
-        </div>
+          <RosterRoyaleComparisonRows p1Roster={p1Roster} p2Roster={roster} />
+        </>
       ) : (
         <RosterGrid roster={roster} compact={false} />
       )}
