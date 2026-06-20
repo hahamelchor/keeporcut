@@ -760,7 +760,6 @@ function makePick(state, slot, value, team) {
     history: [...state.history, newHistoryEntry],
   };
 }
-};
 
 // ── Challenge Link Screen ─────────────────────────────────────────────────────
 function ChallengeLinkScreen({ config, players, p1Result, onHome, onPlayAgain }) {
