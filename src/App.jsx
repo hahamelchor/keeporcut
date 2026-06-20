@@ -1120,7 +1120,7 @@ function RosterRoyaleChallengeReceivedScreen({ onStart }) {
         <div style={{ color: "#e53e3e", fontSize: "13px", fontWeight: 800, letterSpacing: "2px", marginBottom: "8px" }}>YOU'VE BEEN CHALLENGED</div>
         <h2 style={{ color: "#fff", fontWeight: 900, fontSize: "28px", marginBottom: "12px" }}>Roster Royale</h2>
         <p style={{ color: "#888", fontSize: "14px", marginBottom: "28px", lineHeight: 1.6 }}>
-          Your opponent already drafted their squad. You'll see the same sequence of 10 randomized teams — your picks stay hidden until you're done.
+          Your opponent already drafted their squad. You'll see the same sequence of 10 randomized teams, the order you choose to fill your roster will radically change the look of each team — hit accept to see who is the better GM.
         </p>
         <button onClick={onStart} style={{ width: "100%", background: "linear-gradient(135deg, #c53030, #e53e3e)", color: "#fff", border: "none", borderRadius: "10px", padding: "18px", fontWeight: 900, fontSize: "18px", cursor: "pointer", textTransform: "uppercase" }}>
           Accept Challenge ⚔️
