@@ -416,6 +416,10 @@ function ModeMenuScreen({ onSelectMode }) {
             <div style={{ color: "#888", fontSize: "13px", marginTop: "2px" }}>Build a roster from current NFL rosters.</div>
           </div>
         </button>
+
+        <div style={{ background: "transparent", border: "2px dashed #2d2d4a", borderRadius: "14px", padding: "20px", textAlign: "center", color: "#555", fontSize: "13px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase" }}>
+          🔜 More Game Modes Coming Soon
+        </div>
       </div>
     </div>
   );
