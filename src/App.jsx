@@ -383,7 +383,6 @@ function ModeMenuScreen({ onSelectMode }) {
             <div style={{ color: "#fff", fontWeight: 900, fontSize: "20px" }}>Roster Royale</div>
             <div style={{ color: "#888", fontSize: "13px", marginTop: "2px" }}>Build a roster from current NFL rosters.</div>
           </div>
-          <div style={{ position: "absolute", top: "12px", right: "12px", background: "#2d2d4a", color: "#f6c90e", fontWeight: 800, fontSize: "9px", padding: "3px 8px", borderRadius: "4px", letterSpacing: "1px" }}>COMING SOON</div>
         </button>
       </div>
     </div>
@@ -1016,6 +1015,10 @@ export default function App() {
   const [p1Result, setP1Result] = useState(null);
   const [challengeData, setChallengeData] = useState(null);
   const nflPlayersRef = useRef(NFL_PLAYERS_FALLBACK);
+  const [rrTeams, setRrTeams] = useState([]);
+  const [rrTeamsLoading, setRrTeamsLoading] = useState(false);
+  const [rrSeed, setRrSeed] = useState(null);
+  const [rrRoster, setRrRoster] = useState(null);
 
   // On mount: fetch players from Google Sheet, then check URL
   useEffect(() => {
@@ -1120,12 +1123,37 @@ const handleChallengeAccepted = () => {
   };
 
 const handleSelectMode = (mode) => {
-    if (mode === "keep-or-cut") {
-      setScreen("setup");
-    } else {
-      setScreen("roster-royale-coming-soon");
+  if (mode === "keep-or-cut") {
+    setScreen("setup");
+  } else {
+    setScreen("roster-royale-launch");
+    if (rrTeams.length === 0) {
+      setRrTeamsLoading(true);
+      fetch(DRAFT_MODE_API_URL)
+        .then((res) => res.json())
+        .then((rows) => {
+          setRrTeams(rows);
+          setRrTeamsLoading(false);
+        })
+        .catch((e) => {
+          console.warn("Failed to load Draft Mode teams", e);
+          setRrTeamsLoading(false);
+        });
     }
-  };
+  }
+};
+
+  const handleStartRosterRoyale = () => {
+  const seed = Math.floor(Math.random() * 2147483647) + 1;
+  setRrSeed(seed);
+  setRrRoster(null);
+  setScreen("roster-royale-game");
+};
+
+const handleRosterRoyaleComplete = (finalRoster) => {
+  setRrRoster(finalRoster);
+  setScreen("roster-royale-recap");
+};
   
   const goHome = () => {
     clearURLParams();
@@ -1144,7 +1172,31 @@ const handleSelectMode = (mode) => {
 
       {screen === "mode-menu" && <ModeMenuScreen onSelectMode={handleSelectMode} />}
 
-      {screen === "roster-royale-coming-soon" && <ComingSoonScreen onBack={() => setScreen("mode-menu")} />}
+      {screen === "roster-royale-launch" && (
+  <RosterRoyaleLaunchScreen
+    teams={rrTeams}
+    loading={rrTeamsLoading}
+    onStart={handleStartRosterRoyale}
+    onBack={() => setScreen("mode-menu")}
+  />
+)}
+
+{screen === "roster-royale-game" && (
+  <RosterRoyaleGameScreen
+    teams={rrTeams}
+    seed={rrSeed}
+    playerNum={1}
+    onComplete={handleRosterRoyaleComplete}
+  />
+)}
+
+{screen === "roster-royale-recap" && rrRoster && (
+  <RosterRoyaleRecapScreen
+    roster={rrRoster}
+    onPlayAgain={handleStartRosterRoyale}
+    onHome={() => setScreen("mode-menu")}
+  />
+)}
 
       {screen === "setup" && <SetupScreen onStart={handleStart} onBack={() => setScreen("mode-menu")} />}
 
