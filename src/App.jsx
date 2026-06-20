@@ -798,6 +798,131 @@ function RosterRoyaleLaunchScreen({ teams, onStart, onBack, loading }) {
   );
 }
 
+const RR_ROSTER_SLOTS = [
+  "qb", "rb", "wr1", "wr2", "wr3", "te", "oline", "def_base", "def_player", "coach"
+];
+
+const RR_SLOT_LABELS = {
+  qb: "QB", rb: "RB", wr1: "WR1", wr2: "WR2", wr3: "WR3", te: "TE",
+  oline: "O-Line", def_base: "Defense", def_player: "Defensive Player", coach: "Coach",
+};
+
+function rrGetTeamOffers(teamRow) {
+  return {
+    qb: teamRow.qb,
+    rb: teamRow.rb,
+    wr1: teamRow.wr1,
+    wr2: teamRow.wr2,
+    wr3: teamRow.wr3,
+    te: teamRow.te,
+    oline: teamRow.oline,
+    def_base: teamRow.def_base,
+    def_player: [teamRow.def1, teamRow.def2, teamRow.def3, teamRow.def4, teamRow.def5].filter(Boolean),
+    coach: teamRow.coach,
+  };
+}
+
+function rrCreateDraftState(teams, seed) {
+  return {
+    teams,
+    seed,
+    round: 0,
+    roster: RR_ROSTER_SLOTS.reduce((acc, slot) => ({ ...acc, [slot]: null }), {}),
+    history: [],
+  };
+}
+
+function rrSeededRandom(seed) {
+  let s = Math.abs(seed) >>> 0;
+  return function () {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 4294967296;
+  };
+}
+
+function rrGetOpenSlots(state) {
+  return RR_ROSTER_SLOTS.filter((slot) => state.roster[slot] === null);
+}
+
+function rrIsDraftComplete(state) {
+  return rrGetOpenSlots(state).length === 0;
+}
+
+function rrGetNextTeam(state) {
+  const rand = rrSeededRandom(state.seed + state.round * 7919);
+  const index = Math.floor(rand() * state.teams.length);
+  return state.teams[index];
+}
+
+function rrGetRoundChoices(state, team) {
+  const openSlots = rrGetOpenSlots(state);
+  const offers = rrGetTeamOffers(team);
+
+  return openSlots
+    .map((slot) => {
+      if (slot === "def_player") {
+        const options = offers.def_player;
+        if (!options || options.length === 0) return null;
+        return { slot, label: RR_SLOT_LABELS[slot], options };
+      }
+      const value = offers[slot];
+      if (!value) return null;
+      return { slot, label: RR_SLOT_LABELS[slot], value };
+    })
+    .filter(Boolean);
+}
+
+function rrMakePick(state, slot, value, team) {
+  if (state.roster[slot] !== null) {
+    throw new Error(`Slot "${slot}" is already filled.`);
+  }
+  const newRoster = { ...state.roster, [slot]: { value, teamName: team.team } };
+  const newHistoryEntry = { round: state.round, teamName: team.team, slotFilled: slot, value };
+  return {
+    ...state,
+    roster: newRoster,
+    round: state.round + 1,
+    history: [...state.history, newHistoryEntry],
+  };
+}
+
+function abbreviateName(name) {
+  if (!name) return "";
+  const parts = name.split(" ");
+  if (parts.length < 2) return name;
+  return `${parts[0][0]}. ${parts.slice(1).join(" ")}`;
+}
+
+function RosterGrid({ roster, compact = true }) {
+  const gridSlots = RR_ROSTER_SLOTS;
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: compact ? "6px" : "10px" }}>
+      {gridSlots.map((slot) => {
+        const pick = roster[slot];
+        return (
+          <div key={slot} style={{
+            background: pick ? "rgba(74,144,217,0.12)" : "#15152a",
+            border: `1px solid ${pick ? "#4a90d9" : "#2d2d4a"}`,
+            borderRadius: "8px",
+            padding: compact ? "6px 8px" : "12px 10px",
+            minHeight: compact ? "auto" : "70px",
+          }}>
+            <div style={{ color: "#666", fontSize: compact ? "9px" : "10px", fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase" }}>
+              {RR_SLOT_LABELS[slot]}
+            </div>
+            <div style={{ color: pick ? "#fff" : "#444", fontSize: compact ? "11px" : "14px", fontWeight: 700, marginTop: "2px", lineHeight: 1.2 }}>
+              {pick ? (compact ? abbreviateName(pick.value) : pick.value) : "—"}
+            </div>
+            {!compact && pick && (
+              <div style={{ color: "#888", fontSize: "10px", marginTop: "2px" }}>{pick.teamName}</div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function RosterRoyaleGameScreen({ teams, seed, playerNum = 1, onComplete }) {
   const [state, setState] = useState(() => rrCreateDraftState(teams, seed));
   const [currentTeam, setCurrentTeam] = useState(() => rrGetNextTeam(rrCreateDraftState(teams, seed)));
