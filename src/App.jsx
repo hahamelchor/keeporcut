@@ -1052,17 +1052,17 @@ function RosterRoyaleGameScreen({ teams, seed, playerNum = 1, onComplete }) {
                 <button
                   onClick={() => handlePick(choice)}
                   style={{
-                    width: "100%", background: defPlayerExpanded ? "rgba(74,144,217,0.15)" : "#1a1a2e",
-                    border: `2px solid ${defPlayerExpanded ? "#4a90d9" : "#2d2d4a"}`, borderRadius: "10px",
+                    width: "100%", background: defPlayerExpanded ? `${getTeamColor(currentTeam.team)}26` : "#1a1a2e",
+                    border: `2px solid ${getTeamColor(currentTeam.team)}`, borderRadius: "10px",
                     padding: "14px 16px", cursor: "pointer", textAlign: "left", display: "flex",
                     justifyContent: "space-between", alignItems: "center",
                   }}
                 >
                   <div>
-                    <div style={{ color: "#888", fontSize: "10px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase" }}>{choice.label}</div>
+                    <div style={{ color: getTeamColor(currentTeam.team), fontSize: "10px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase" }}>{choice.label}</div>
                     <div style={{ color: "#fff", fontWeight: 700, fontSize: "14px" }}>Choose a defender</div>
                   </div>
-                  <div style={{ color: "#888", fontSize: "16px" }}>{defPlayerExpanded ? "▲" : "▼"}</div>
+                  <div style={{ color: getTeamColor(currentTeam.team), fontSize: "16px" }}>{defPlayerExpanded ? "▲" : "▼"}</div>
                 </button>
                 {defPlayerExpanded && (
                   <div style={{ background: "#111", border: "1px solid #2d2d4a", borderRadius: "10px", marginTop: "4px", overflow: "hidden" }}>
@@ -1085,21 +1085,21 @@ function RosterRoyaleGameScreen({ teams, seed, playerNum = 1, onComplete }) {
             );
           }
 
-          return (
+         return (
             <button
               key={choice.slot}
               onClick={() => handlePick(choice)}
               style={{
-                width: "100%", background: "#1a1a2e", border: "2px solid #2d2d4a", borderRadius: "10px",
+                width: "100%", background: "#1a1a2e", border: `2px solid ${getTeamColor(currentTeam.team)}`, borderRadius: "10px",
                 padding: "14px 16px", cursor: "pointer", textAlign: "left", display: "flex",
                 justifyContent: "space-between", alignItems: "center",
               }}
             >
               <div>
-                <div style={{ color: "#888", fontSize: "10px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase" }}>{choice.label}</div>
+                <div style={{ color: getTeamColor(currentTeam.team), fontSize: "10px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase" }}>{choice.label}</div>
                 <div style={{ color: "#fff", fontWeight: 700, fontSize: "15px" }}>{choice.value}</div>
               </div>
-              <div style={{ color: "#4a90d9", fontSize: "18px" }}>→</div>
+              <div style={{ color: getTeamColor(currentTeam.team), fontSize: "18px" }}>→</div>
             </button>
           );
         })}
