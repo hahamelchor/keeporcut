@@ -804,7 +804,7 @@ const RR_ROSTER_SLOTS = [
 
 const RR_SLOT_LABELS = {
   qb: "QB", rb: "RB", wr1: "WR1", wr2: "WR2", wr3: "WR3", te: "TE",
-  oline: "O-Line", def_base: "Defense", def_player: "Defensive Player", coach: "Coach",
+  oline: "O-Line", def_base: "Base Defense", def_player: "Defensive Player to Add", coach: "Coach",
 };
 
 function rrGetTeamOffers(teamRow) {
