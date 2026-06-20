@@ -831,12 +831,12 @@ function RosterRoyaleLaunchScreen({ teams, onStart, onBack, loading }) {
 }
 
 const RR_ROSTER_SLOTS = [
-  "qb", "rb", "wr1", "wr2", "wr3", "te", "oline", "def_base", "def_player", "coach"
+  "coach", "qb", "rb", "wr1", "wr2", "wr3", "te", "oline", "def_base", "def_player",
 ];
 
 const RR_SLOT_LABELS = {
   qb: "QB", rb: "RB", wr1: "WR1", wr2: "WR2", wr3: "WR3", te: "TE",
-  oline: "O-Line", def_base: "Base Defense", def_player: "Defensive Player to Add", coach: "Coach",
+  oline: "O-Line", def_base: "Base Defense", def_player: "Bonus Defender", coach: "Coach",
 };
 
 function rrGetTeamOffers(teamRow) {
