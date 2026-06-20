@@ -358,8 +358,56 @@ function PlayerCard({ player, onKeep, onCut, showInfo, decision = null, compact 
   );
 }
 
+// ── Mode Menu Screen ──────────────────────────────────────────────────────────
+function ModeMenuScreen({ onSelectMode }) {
+  return (
+    <div style={{ maxWidth: "480px", margin: "0 auto", padding: "24px 16px" }}>
+      <div style={{ textAlign: "center", marginBottom: "32px" }}>
+        <div style={{ fontSize: "13px", letterSpacing: "3px", color: "#e53e3e", fontWeight: 800, textTransform: "uppercase", marginBottom: "8px" }}>NFL</div>
+        <h1 style={{ fontSize: "42px", fontWeight: 900, color: "#fff", margin: 0, lineHeight: 1, letterSpacing: "-1px" }}>GAME<br /><span style={{ color: "#e53e3e" }}>MODES</span></h1>
+        <p style={{ color: "#888", marginTop: "12px", fontSize: "14px" }}>Pick your game.</p>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+        <button onClick={() => onSelectMode("keep-or-cut")} style={{ background: "linear-gradient(160deg, #1a1a2e 0%, #16213e 100%)", border: "2px solid #2d2d4a", borderRadius: "14px", padding: "20px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: "16px" }}>
+          <div style={{ fontSize: "36px" }}>✂️</div>
+          <div>
+            <div style={{ color: "#fff", fontWeight: 900, fontSize: "20px" }}>Keep or Cut</div>
+            <div style={{ color: "#888", fontSize: "13px", marginTop: "2px" }}>Draft your squad. Spark the debate.</div>
+          </div>
+        </button>
+
+        <button onClick={() => onSelectMode("roster-royale")} style={{ background: "linear-gradient(160deg, #1a1a2e 0%, #16213e 100%)", border: "2px solid #2d2d4a", borderRadius: "14px", padding: "20px", cursor: "pointer", textAlign: "left", display: "flex", alignItems: "center", gap: "16px", position: "relative" }}>
+          <div style={{ fontSize: "36px" }}>🏆</div>
+          <div>
+            <div style={{ color: "#fff", fontWeight: 900, fontSize: "20px" }}>Roster Royale</div>
+            <div style={{ color: "#888", fontSize: "13px", marginTop: "2px" }}>Build a roster from current NFL rosters.</div>
+          </div>
+          <div style={{ position: "absolute", top: "12px", right: "12px", background: "#2d2d4a", color: "#f6c90e", fontWeight: 800, fontSize: "9px", padding: "3px 8px", borderRadius: "4px", letterSpacing: "1px" }}>COMING SOON</div>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── Coming Soon Screen ────────────────────────────────────────────────────────
+function ComingSoonScreen({ onBack }) {
+  return (
+    <div style={{ maxWidth: "480px", margin: "0 auto", padding: "24px 16px", textAlign: "center" }}>
+      <div style={{ padding: "60px 20px" }}>
+        <div style={{ fontSize: "56px", marginBottom: "16px" }}>🏆</div>
+        <h2 style={{ color: "#fff", fontWeight: 900, fontSize: "28px", marginBottom: "12px" }}>Roster Royale</h2>
+        <p style={{ color: "#888", fontSize: "14px", marginBottom: "28px", lineHeight: 1.6 }}>
+          Coming soon — draft a 10-man roster from current NFL talent and challenge a friend to build a better team.
+        </p>
+        <button onClick={onBack} style={{ background: "#1a1a2e", border: "1px solid #2d2d4a", color: "#888", borderRadius: "10px", padding: "14px 24px", fontWeight: 700, fontSize: "14px", cursor: "pointer" }}>← Back to Game Modes</button>
+      </div>
+    </div>
+  );
+}
+
 // ── Setup Screen ──────────────────────────────────────────────────────────────
-function SetupScreen({ onStart }) {
+function SetupScreen({ onStart, onBack }) {
   const [mode, setMode] = useState("challenge");
   const [poolId, setPoolId] = useState("all_players");
   const [totalPlayers, setTotalPlayers] = useState(8);
@@ -372,6 +420,7 @@ function SetupScreen({ onStart }) {
 
   return (
     <div style={{ maxWidth: "480px", margin: "0 auto", padding: "24px 16px" }}>
+      <button onClick={onBack} style={{ background: "none", border: "none", color: "#888", fontSize: "13px", cursor: "pointer", marginBottom: "16px", padding: 0 }}>← All Games</button>
       <div style={{ textAlign: "center", marginBottom: "32px" }}>
         <div style={{ fontSize: "13px", letterSpacing: "3px", color: "#e53e3e", fontWeight: 800, textTransform: "uppercase", marginBottom: "8px" }}>NFL</div>
         <h1 style={{ fontSize: "42px", fontWeight: 900, color: "#fff", margin: 0, lineHeight: 1, letterSpacing: "-1px" }}>KEEP<br /><span style={{ color: "#e53e3e" }}>OR CUT</span></h1>
@@ -797,7 +846,7 @@ export default function App() {
           }
         }
       }
-      setScreen("setup");
+      setScreen("mode-menu");
     }
     init();
   }, []);
@@ -871,6 +920,14 @@ const handleChallengeAccepted = () => {
     setConfig(prev => ({ ...prev, _p2Result: result }));
   };
 
+const handleSelectMode = (mode) => {
+    if (mode === "keep-or-cut") {
+      setScreen("setup");
+    } else {
+      setScreen("roster-royale-coming-soon");
+    }
+  };
+  
   const goHome = () => {
     clearURLParams();
     setChallengeData(null);
@@ -886,7 +943,11 @@ const handleChallengeAccepted = () => {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", color: "#555" }}>Loading...</div>
       )}
 
-      {screen === "setup" && <SetupScreen onStart={handleStart} />}
+      {screen === "mode-menu" && <ModeMenuScreen onSelectMode={handleSelectMode} />}
+
+      {screen === "roster-royale-coming-soon" && <ComingSoonScreen onBack={() => setScreen("mode-menu")} />}
+
+      {screen === "setup" && <SetupScreen onStart={handleStart} onBack={() => setScreen("mode-menu")} />}
 
       {screen === "game-p1" && (
         <GameScreen config={config} playerNum={1} players={gamePlayers} onComplete={handleP1Complete} />
