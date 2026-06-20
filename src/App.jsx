@@ -931,10 +931,10 @@ function RosterRoyaleGameScreen({ teams, seed, playerNum = 1, onComplete }) {
   const choices = rrGetRoundChoices(state, currentTeam);
   const roundNum = state.round + 1;
 
-  const handlePick = (choice, chosenValue = null) => {
+ const handlePick = (choice, chosenValue = null) => {
     const value = choice.slot === "def_player" ? chosenValue : choice.value;
     if (choice.slot === "def_player" && !value) {
-      setDefPlayerExpanded(true);
+      setDefPlayerExpanded((prev) => !prev);
       return;
     }
 
