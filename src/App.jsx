@@ -680,7 +680,7 @@ function createDraftState(teams, seed) {
 }
 
 // Seeded random, consistent with the rest of the app (same algorithm as keep/cut)
-function seededRandom(seed) {
+function rrseededRandom(seed) {
   let s = Math.abs(seed) >>> 0;
   return function () {
     s = (s * 1664525 + 1013904223) >>> 0;
@@ -703,7 +703,7 @@ function isDraftComplete(state) {
 // of teams every time (critical for challenge mode — both players see the
 // same team sequence, just make different picks).
 function getNextTeam(state) {
-  const rand = seededRandom(state.seed + state.round * 7919); // prime offset avoids correlation between rounds
+  const rand = rrseededRandom(state.seed + state.round * 7919); // prime offset avoids correlation between rounds
   const index = Math.floor(rand() * state.teams.length);
   return state.teams[index];
 }
@@ -760,18 +760,6 @@ function makePick(state, slot, value, team) {
     history: [...state.history, newHistoryEntry],
   };
 }
-
-module.exports = {
-  ROSTER_SLOTS,
-  SLOT_LABELS,
-  getTeamOffers,
-  createDraftState,
-  seededRandom,
-  getOpenSlots,
-  isDraftComplete,
-  getNextTeam,
-  getRoundChoices,
-  makePick,
 };
 
 // ── Challenge Link Screen ─────────────────────────────────────────────────────
