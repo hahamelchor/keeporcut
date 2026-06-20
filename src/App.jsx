@@ -1535,11 +1535,7 @@ const handleSelectMode = (mode) => {
 };
 
   const handleChallengeFriendRosterRoyale = () => {
-  const seed = Math.floor(Math.random() * 2147483647) + 1;
-  setRrSeed(seed);
-  setRrRoster(null);
-  setRrIsChallengeSender(true);
-  setScreen("roster-royale-game");
+  setScreen("roster-royale-challenge-link");
 };
 
 const handleRosterRoyaleChallengeAccepted = () => {
