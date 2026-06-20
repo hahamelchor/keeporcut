@@ -1366,20 +1366,21 @@ const handleSelectMode = (mode) => {
   if (mode === "keep-or-cut") {
     setScreen("setup");
   } else {
-    setScreen("roster-royale-launch");
-    if (rrTeams.length === 0) {
-      setRrTeamsLoading(true);
-      fetch(DRAFT_MODE_API_URL)
-        .then((res) => res.json())
-        .then((rows) => {
-          setRrTeams(rows);
-          setRrTeamsLoading(false);
-        })
-        .catch((e) => {
-          console.warn("Failed to load Draft Mode teams", e);
-          setRrTeamsLoading(false);
-        });
-    }
+    setRrTeamsLoading(true);
+    fetch(DRAFT_MODE_API_URL)
+      .then((res) => res.json())
+      .then((rows) => {
+        setRrTeams(rows);
+        setRrTeamsLoading(false);
+        const seed = Math.floor(Math.random() * 2147483647) + 1;
+        setRrSeed(seed);
+        setRrRoster(null);
+        setScreen("roster-royale-game");
+      })
+      .catch((e) => {
+        console.warn("Failed to load Draft Mode teams", e);
+        setRrTeamsLoading(false);
+      });
   }
 };
 
