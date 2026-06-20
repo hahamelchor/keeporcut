@@ -977,7 +977,7 @@ function RosterGrid({ roster, compact = true }) {
             padding: compact ? "6px 8px" : "12px 10px",
             minHeight: compact ? "auto" : "70px",
           }}>
-            <div style={{ color: "#666", fontSize: compact ? "9px" : "10px", fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase" }}>
+            <div style={{ color: compact && pick ? getTeamColor(pick.teamName) : "#666", fontSize: compact ? "9px" : "10px", fontWeight: 700, letterSpacing: "0.5px", textTransform: "uppercase" }}>
               {RR_SLOT_LABELS[slot]}
             </div>
             <div style={{ color: pick ? "#fff" : "#444", fontSize: compact ? "11px" : "14px", fontWeight: 700, marginTop: "2px", lineHeight: 1.2 }}>
