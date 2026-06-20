@@ -798,6 +798,121 @@ function RosterRoyaleLaunchScreen({ teams, onStart, onBack, loading }) {
   );
 }
 
+function RosterRoyaleGameScreen({ teams, seed, playerNum = 1, onComplete }) {
+  const [state, setState] = useState(() => rrCreateDraftState(teams, seed));
+  const [currentTeam, setCurrentTeam] = useState(() => rrGetNextTeam(rrCreateDraftState(teams, seed)));
+  const [defPlayerExpanded, setDefPlayerExpanded] = useState(false);
+
+  const choices = rrGetRoundChoices(state, currentTeam);
+  const roundNum = state.round + 1;
+
+  const handlePick = (choice, chosenValue = null) => {
+    const value = choice.slot === "def_player" ? chosenValue : choice.value;
+    if (choice.slot === "def_player" && !value) {
+      setDefPlayerExpanded(true);
+      return;
+    }
+
+    const newState = rrMakePick(state, choice.slot, value, currentTeam);
+    setDefPlayerExpanded(false);
+
+    if (rrIsDraftComplete(newState)) {
+      onComplete(newState.roster);
+      return;
+    }
+
+    setState(newState);
+    setCurrentTeam(rrGetNextTeam(newState));
+  };
+
+  return (
+    <div style={{ maxWidth: "480px", margin: "0 auto", padding: "24px 16px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+        <div>
+          {playerNum === 2 && (
+            <div style={{ color: "#4a90d9", fontSize: "12px", fontWeight: 700, marginBottom: "2px" }}>CHALLENGER</div>
+          )}
+          <div style={{ color: "#888", fontSize: "13px" }}>Round {roundNum} of 10</div>
+        </div>
+      </div>
+
+      <div style={{ marginBottom: "20px" }}>
+        <RosterGrid roster={state.roster} compact />
+      </div>
+
+      <div style={{ background: "#1a1a2e", borderRadius: "4px", height: "4px", marginBottom: "20px", overflow: "hidden" }}>
+        <div style={{ background: "linear-gradient(90deg, #e53e3e, #4a90d9)", height: "100%", width: `${(state.round / 10) * 100}%`, transition: "width 0.3s" }} />
+      </div>
+
+      <div style={{ textAlign: "center", marginBottom: "20px" }}>
+        <div style={{ color: "#888", fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "6px" }}>On The Clock</div>
+        <div style={{ fontSize: "28px", fontWeight: 900, color: "#fff" }}>🎲 {currentTeam.team}</div>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+        {choices.map((choice) => {
+          if (choice.slot === "def_player") {
+            return (
+              <div key={choice.slot}>
+                <button
+                  onClick={() => handlePick(choice)}
+                  style={{
+                    width: "100%", background: defPlayerExpanded ? "rgba(74,144,217,0.15)" : "#1a1a2e",
+                    border: `2px solid ${defPlayerExpanded ? "#4a90d9" : "#2d2d4a"}`, borderRadius: "10px",
+                    padding: "14px 16px", cursor: "pointer", textAlign: "left", display: "flex",
+                    justifyContent: "space-between", alignItems: "center",
+                  }}
+                >
+                  <div>
+                    <div style={{ color: "#888", fontSize: "10px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase" }}>{choice.label}</div>
+                    <div style={{ color: "#fff", fontWeight: 700, fontSize: "14px" }}>Choose a defender</div>
+                  </div>
+                  <div style={{ color: "#888", fontSize: "16px" }}>{defPlayerExpanded ? "▲" : "▼"}</div>
+                </button>
+                {defPlayerExpanded && (
+                  <div style={{ background: "#111", border: "1px solid #2d2d4a", borderRadius: "10px", marginTop: "4px", overflow: "hidden" }}>
+                    {choice.options.map((name) => (
+                      <button
+                        key={name}
+                        onClick={() => handlePick(choice, name)}
+                        style={{
+                          width: "100%", background: "transparent", border: "none",
+                          borderBottom: "1px solid #1a1a2e", padding: "12px 16px", cursor: "pointer",
+                          textAlign: "left", color: "#ddd", fontSize: "14px", fontWeight: 600,
+                        }}
+                      >
+                        {name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          }
+
+          return (
+            <button
+              key={choice.slot}
+              onClick={() => handlePick(choice)}
+              style={{
+                width: "100%", background: "#1a1a2e", border: "2px solid #2d2d4a", borderRadius: "10px",
+                padding: "14px 16px", cursor: "pointer", textAlign: "left", display: "flex",
+                justifyContent: "space-between", alignItems: "center",
+              }}
+            >
+              <div>
+                <div style={{ color: "#888", fontSize: "10px", fontWeight: 700, letterSpacing: "1px", textTransform: "uppercase" }}>{choice.label}</div>
+                <div style={{ color: "#fff", fontWeight: 700, fontSize: "15px" }}>{choice.value}</div>
+              </div>
+              <div style={{ color: "#4a90d9", fontSize: "18px" }}>→</div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function RosterRoyaleRecapScreen({ roster, onPlayAgain, onHome }) {
   const [copied, setCopied] = useState(false);
 
