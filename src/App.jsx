@@ -833,7 +833,7 @@ function RosterRoyaleLaunchScreen({ teams, onStart, onBack, loading }) {
 const RR_TEAM_COLORS = {
   "Arizona Cardinals": "#97233F",
   "Atlanta Falcons": "#A71930",
-  "Baltimore Ravens": "#241773",
+  "Baltimore Ravens": "#5B3FA0",
   "Buffalo Bills": "#00338D",
   "Carolina Panthers": "#0085CA",
   "Chicago Bears": "#3C6191",
