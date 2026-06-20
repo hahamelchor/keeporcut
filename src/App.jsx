@@ -1138,7 +1138,7 @@ function RosterRoyaleChallengeLinkScreen({ seed, roster, onHome, onPlayAgain }) 
   );
 }
 
-function RosterRoyaleRecapScreen({ roster, onPlayAgain, onHome, isChallenge = false, p1Roster = null }) {
+function RosterRoyaleRecapScreen({ roster, onPlayAgain, onHome, isChallenge = false, p1Roster = null, onChallengeFriend = null }) {
   const [copied, setCopied] = useState(false);
 
   const formatRoster = (r) => RR_ROSTER_SLOTS.map((slot) => `${RR_SLOT_LABELS[slot]}: ${r[slot]?.value || "—"}`).join("\n");
@@ -1179,7 +1179,10 @@ function RosterRoyaleRecapScreen({ roster, onPlayAgain, onHome, isChallenge = fa
         </button>
       </div>
 
-      <div style={{ display: "flex", gap: "10px", marginTop: "16px" }}>
+      {!isChallenge && onChallengeFriend && (
+        <button onClick={onChallengeFriend} style={{ width: "100%", background: "linear-gradient(135deg, #1a5c3a, #2d9e5f)", color: "#fff", border: "none", borderRadius: "10px", padding: "14px", fontWeight: 800, fontSize: "15px", cursor: "pointer", marginTop: "16px" }}>📲 Challenge a Friend</button>
+      )}
+      <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
         <button onClick={onPlayAgain} style={{ flex: 1, background: "linear-gradient(135deg, #c53030, #e53e3e)", color: "#fff", border: "none", borderRadius: "10px", padding: "14px", fontWeight: 800, fontSize: "15px", cursor: "pointer" }}>🔄 Draft Again</button>
         <button onClick={onHome} style={{ background: "#1a1a2e", border: "1px solid #2d2d4a", color: "#888", borderRadius: "10px", padding: "14px", fontWeight: 700, fontSize: "15px", cursor: "pointer" }}>🔀 All Games</button>
       </div>
@@ -1377,6 +1380,7 @@ export default function App() {
   const [rrSeed, setRrSeed] = useState(null);
   const [rrRoster, setRrRoster] = useState(null);
   const [rrChallengeData, setRrChallengeData] = useState(null);
+  const [rrIsChallengeSender, setRrIsChallengeSender] = useState(false);
 
   // On mount: fetch players from Google Sheet, then check URL
   useEffect(() => {
@@ -1513,6 +1517,7 @@ const handleSelectMode = (mode) => {
         const seed = Math.floor(Math.random() * 2147483647) + 1;
         setRrSeed(seed);
         setRrRoster(null);
+        setRrIsChallengeSender(false);
         setScreen("roster-royale-game");
       })
       .catch((e) => {
@@ -1531,7 +1536,13 @@ const handleSelectMode = (mode) => {
 
 const handleRosterRoyaleComplete = (finalRoster) => {
   setRrRoster(finalRoster);
-  setScreen("roster-royale-recap");
+  if (rrChallengeData) {
+    setScreen("roster-royale-recap-challenge");
+  } else if (rrIsChallengeSender) {
+    setScreen("roster-royale-challenge-link");
+  } else {
+    setScreen("roster-royale-recap");
+  }
 };
   
   const goHome = () => {
