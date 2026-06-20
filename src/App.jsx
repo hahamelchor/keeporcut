@@ -1070,6 +1070,24 @@ function RosterRoyaleGameScreen({ teams, seed, playerNum = 1, onComplete }) {
   );
 }
 
+function RosterRoyaleChallengeReceivedScreen({ onStart }) {
+  return (
+    <div style={{ maxWidth: "480px", margin: "0 auto", padding: "24px 16px", textAlign: "center" }}>
+      <div style={{ padding: "40px 20px 20px" }}>
+        <div style={{ fontSize: "56px", marginBottom: "12px" }}>⚔️</div>
+        <div style={{ color: "#e53e3e", fontSize: "13px", fontWeight: 800, letterSpacing: "2px", marginBottom: "8px" }}>YOU'VE BEEN CHALLENGED</div>
+        <h2 style={{ color: "#fff", fontWeight: 900, fontSize: "28px", marginBottom: "12px" }}>Roster Royale</h2>
+        <p style={{ color: "#888", fontSize: "14px", marginBottom: "28px", lineHeight: 1.6 }}>
+          Your opponent already drafted their squad. You'll see the same sequence of 10 randomized teams — your picks stay hidden until you're done.
+        </p>
+        <button onClick={onStart} style={{ width: "100%", background: "linear-gradient(135deg, #c53030, #e53e3e)", color: "#fff", border: "none", borderRadius: "10px", padding: "18px", fontWeight: 900, fontSize: "18px", cursor: "pointer", textTransform: "uppercase" }}>
+          Accept Challenge ⚔️
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function RosterRoyaleChallengeLinkScreen({ seed, roster, onHome, onPlayAgain }) {
   const [copied, setCopied] = useState(false);
   const [textCopied, setTextCopied] = useState(false);
@@ -1120,21 +1138,38 @@ function RosterRoyaleChallengeLinkScreen({ seed, roster, onHome, onPlayAgain }) 
   );
 }
 
-function RosterRoyaleRecapScreen({ roster, onPlayAgain, onHome }) {
+function RosterRoyaleRecapScreen({ roster, onPlayAgain, onHome, isChallenge = false, p1Roster = null }) {
   const [copied, setCopied] = useState(false);
 
-  const shareText = `🏆 Roster Royale — My Squad\n\n` +
-    RR_ROSTER_SLOTS.map((slot) => `${RR_SLOT_LABELS[slot]}: ${roster[slot]?.value || "—"}`).join("\n") +
-    `\n\n🎮 Think you can draft better? keeporcut.vercel.app`;
+  const formatRoster = (r) => RR_ROSTER_SLOTS.map((slot) => `${RR_SLOT_LABELS[slot]}: ${r[slot]?.value || "—"}`).join("\n");
+
+  const shareText = isChallenge && p1Roster
+    ? `🏆 Roster Royale — Head-to-Head Results!\n\n👤 Player 1\n${formatRoster(p1Roster)}\n\n⚔️ Player 2\n${formatRoster(roster)}\n\n🎮 Want to play? keeporcut.vercel.app`
+    : `🏆 Roster Royale — My Squad\n\n${formatRoster(roster)}\n\n🎮 Think you can draft better? keeporcut.vercel.app`;
 
   return (
     <div style={{ maxWidth: "600px", margin: "0 auto", padding: "24px 16px" }}>
       <div style={{ textAlign: "center", marginBottom: "28px" }}>
         <div style={{ fontSize: "13px", letterSpacing: "3px", color: "#e53e3e", fontWeight: 800, marginBottom: "6px" }}>FINAL ROSTER</div>
-        <h2 style={{ color: "#fff", fontWeight: 900, fontSize: "28px", margin: 0 }}>🏆 Your Squad</h2>
+        <h2 style={{ color: "#fff", fontWeight: 900, fontSize: "28px", margin: 0 }}>
+          {isChallenge && p1Roster ? "⚔️ Head-to-Head Results" : "🏆 Your Squad"}
+        </h2>
       </div>
 
-      <RosterGrid roster={roster} compact={false} />
+      {isChallenge && p1Roster ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          <div>
+            <div style={{ color: "#4a90d9", fontSize: "12px", fontWeight: 800, letterSpacing: "1px", marginBottom: "10px" }}>👤 PLAYER 1</div>
+            <RosterGrid roster={p1Roster} compact={false} />
+          </div>
+          <div>
+            <div style={{ color: "#4a90d9", fontSize: "12px", fontWeight: 800, letterSpacing: "1px", marginBottom: "10px" }}>⚔️ CHALLENGER</div>
+            <RosterGrid roster={roster} compact={false} />
+          </div>
+        </div>
+      ) : (
+        <RosterGrid roster={roster} compact={false} />
+      )}
 
       <div style={{ marginTop: "28px", background: "#1a1a2e", border: "1px solid #2d2d4a", borderRadius: "10px", padding: "16px" }}>
         <div style={{ color: "#888", fontSize: "11px", letterSpacing: "1px", marginBottom: "10px", textTransform: "uppercase" }}>Share & Spark Debate</div>
@@ -1341,6 +1376,7 @@ export default function App() {
   const [rrTeamsLoading, setRrTeamsLoading] = useState(false);
   const [rrSeed, setRrSeed] = useState(null);
   const [rrRoster, setRrRoster] = useState(null);
+  const [rrChallengeData, setRrChallengeData] = useState(null);
 
   // On mount: fetch players from Google Sheet, then check URL
   useEffect(() => {
@@ -1356,13 +1392,14 @@ export default function App() {
         console.warn("Sheet fetch failed, using fallback players", e);
       }
 
-      const { game, p1result } = getURLParams();
-      if (game && p1result) {
-        const gameData = decodeGame(game);
+      const params = getURLParams();
+
+      if (params.mode === "keep-or-cut" && params.game && params.p1result) {
+        const gameData = decodeGame(params.game);
         if (gameData) {
           const pool = nflPlayersRef.current[gameData.config.poolId] || nflPlayersRef.current.all_time_greats;
           const allPlayers = seededShuffle(pool, gameData.seed).slice(0, gameData.config.totalPlayers);
-          const p1 = decodeResult(p1result, allPlayers);
+          const p1 = decodeResult(params.p1result, allPlayers);
           if (p1) {
             setChallengeData({ gameData, p1Result: p1, allPlayers });
             setScreen("challenge-received");
@@ -1370,6 +1407,25 @@ export default function App() {
           }
         }
       }
+
+      if (params.mode === "roster-royale" && params.rrSeed && params.rrP1Roster) {
+        const seed = parseInt(params.rrSeed);
+        const p1Roster = decodeRoster(params.rrP1Roster);
+        if (!isNaN(seed) && p1Roster) {
+          try {
+            const res = await fetch(DRAFT_MODE_API_URL);
+            const rows = await res.json();
+            setRrTeams(rows);
+            setRrSeed(seed);
+            setRrChallengeData({ p1Roster });
+            setScreen("roster-royale-challenge-received");
+            return;
+          } catch (e) {
+            console.warn("Failed to load Draft Mode teams for challenge", e);
+          }
+        }
+      }
+
       setScreen("mode-menu");
     }
     init();
