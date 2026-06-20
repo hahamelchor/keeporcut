@@ -830,6 +830,44 @@ function RosterRoyaleLaunchScreen({ teams, onStart, onBack, loading }) {
   );
 }
 
+const RR_TEAM_COLORS = {
+  "Arizona Cardinals": "#97233F",
+  "Atlanta Falcons": "#A71930",
+  "Baltimore Ravens": "#241773",
+  "Buffalo Bills": "#00338D",
+  "Carolina Panthers": "#0085CA",
+  "Chicago Bears": "#3C6191",
+  "Cincinnati Bengals": "#FB4F14",
+  "Cleveland Browns": "#8A6240",
+  "Dallas Cowboys": "#3568B5",
+  "Denver Broncos": "#FB4F14",
+  "Detroit Lions": "#0076B6",
+  "Green Bay Packers": "#2E7D52",
+  "Houston Texans": "#3D5566",
+  "Indianapolis Colts": "#2F5C9C",
+  "Jacksonville Jaguars": "#1A8FA3",
+  "Kansas City Chiefs": "#E31837",
+  "Las Vegas Raiders": "#A5ACAF",
+  "Los Angeles Chargers": "#0080C6",
+  "Los Angeles Rams": "#3568B5",
+  "Miami Dolphins": "#008E97",
+  "Minnesota Vikings": "#6A4C9C",
+  "New England Patriots": "#3D5170",
+  "New Orleans Saints": "#D3BC8D",
+  "New York Giants": "#3656A0",
+  "New York Jets": "#1F7A5C",
+  "Philadelphia Eagles": "#1F6B72",
+  "Pittsburgh Steelers": "#FFB612",
+  "San Francisco 49ers": "#C2272D",
+  "Seattle Seahawks": "#3D5170",
+  "Tampa Bay Buccaneers": "#D50A0A",
+  "Tennessee Titans": "#4B92DB",
+  "Washington Commanders": "#8A3A3A",
+};
+function getTeamColor(teamName) {
+  return RR_TEAM_COLORS[teamName] || "#4a90d9";
+}
+
 const RR_ROSTER_SLOTS = [
   "coach", "qb", "rb", "wr1", "wr2", "wr3", "te", "oline", "def_base", "def_player",
 ];
@@ -946,7 +984,7 @@ function RosterGrid({ roster, compact = true }) {
               {pick ? (compact ? abbreviateName(pick.value) : pick.value) : "—"}
             </div>
             {!compact && pick && (
-              <div style={{ color: "#888", fontSize: "10px", marginTop: "2px" }}>{pick.teamName}</div>
+              <div style={{ color: getTeamColor(pick.teamName), fontSize: "10px", marginTop: "2px", fontWeight: 700 }}>{pick.teamName}</div>
             )}
           </div>
         );
@@ -1001,9 +1039,9 @@ function RosterRoyaleGameScreen({ teams, seed, playerNum = 1, onComplete }) {
         <div style={{ background: "linear-gradient(90deg, #e53e3e, #4a90d9)", height: "100%", width: `${(state.round / 10) * 100}%`, transition: "width 0.3s" }} />
       </div>
 
-      <div style={{ textAlign: "center", marginBottom: "20px" }}>
+     <div style={{ textAlign: "center", marginBottom: "20px" }}>
         <div style={{ color: "#888", fontSize: "11px", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "6px" }}>On The Clock</div>
-        <div style={{ fontSize: "28px", fontWeight: 900, color: "#fff" }}>🎲 {currentTeam.team}</div>
+        <div style={{ fontSize: "28px", fontWeight: 900, color: getTeamColor(currentTeam.team) }}>🎲 {currentTeam.team}</div>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
