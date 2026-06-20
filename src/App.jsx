@@ -1222,7 +1222,7 @@ function RosterRoyaleRecapScreen({ roster, onPlayAgain, onHome, isChallenge = fa
     ? `🏆 Roster Royale — Head-to-Head Results! Which player built a better roster?\n\n👤 Player A\n${formatRoster(p1Roster)}\n\n⚔️ Player B\n${formatRoster(roster)}\n\n🎮 Think you can do better? keeporcut.vercel.app`
     : `🏆 Roster Royale — My Squad\n\n${formatRoster(roster)}\n\n🎮 Think you can draft better? keeporcut.vercel.app`;
 
-  const challengeURL = `${window.location.origin}/rr/${roster._seed}~${encodeRoster(roster)}`;
+  const challengeURL = `${window.location.origin}/rr/${roster._seed}.${encodeRoster(roster)}`;
   const smsBody = `🏆 I just drafted my Roster Royale squad. Think you can build a better one? Same 10 rounds, same random teams — let's see who actually knows ball. 👇\n\n${challengeURL}`;
 
   const handleChallengeFriend = () => {
